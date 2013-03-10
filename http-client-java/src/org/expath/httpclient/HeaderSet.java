@@ -30,37 +30,40 @@ import org.apache.http.message.BasicHeader;
 public class HeaderSet
         implements Iterable<Header>
 {
+    private final static String X_DUMMY = "X-Dummy";
+    
+    private final List<Header> myHeaders = new ArrayList<Header>();
+    
     /**
      * Build a new object with no header.
      */
     public HeaderSet()
-    {
-        myHeaders = new ArrayList<Header>();
+    {    
     }
 
     /**
      * Build a new object by *copying* its parameter.
      */
-    public HeaderSet(Header[] headers)
+    public HeaderSet(final Header[] headers)
             throws HttpClientException
     {
         if ( headers == null ) {
             throw new HttpClientException("Headers array is null");
         }
-        myHeaders = new ArrayList<Header>(headers.length);
+        
         myHeaders.addAll(Arrays.asList(headers));
     }
 
     /**
      * Build a new object by *copying* its parameter.
      */
-    public HeaderSet(Collection<Header> headers)
+    public HeaderSet(final Collection<Header> headers)
             throws HttpClientException
     {
         if ( headers == null ) {
             throw new HttpClientException("Headers list is null");
         }
-        myHeaders = new ArrayList<Header>(headers);
+        headers.addAll(headers);
     }
 
     public Iterator<Header> iterator()
@@ -78,64 +81,66 @@ public class HeaderSet
         return myHeaders.isEmpty();
     }
 
-    public Header add(Header h)
+    public Header add(final Header h)
     {
         myHeaders.add(h);
         return h;
     }
 
-    public Header add(String name, String value)
+    public Header add(final String name, final String value)
     {
-        Header h = new BasicHeader(name, value);
+        final Header h = new BasicHeader(name, value);
         myHeaders.add(h);
         return h;
     }
 
-    public Header getFirstHeader(String name)
+    public Header getFirstHeader(final String name)
             throws HttpClientException
     {
-        for ( Header h : myHeaders ) {
+        Header header = null;
+        for ( final Header h : myHeaders ) {
             if ( name.equalsIgnoreCase(h.getName()) ) {
-                return h;
+                header = h;
+                break;
             }
         }
-        return null;
+        return header;
     }
 
-    public String getFirstHeaderWithoutParam(String name)
+    public String getFirstHeaderWithoutParam(final String name)
             throws HttpClientException
     {
-        Header h = getFirstHeader(name);
+        final Header h = getFirstHeader(name);
         return getHeaderWithoutParam(h);
     }
 
-    public static String getValueWithoutParam(String header_value)
+    public static String getValueWithoutParam(final String header_value)
             throws HttpClientException
     {
-        Header h = new BasicHeader("X-Dummy", header_value);
+        final Header h = new BasicHeader(X_DUMMY, header_value);
         return getHeaderWithoutParam(h);
     }
 
-    public static String getHeaderWithoutParam(Header header)
+    public static String getHeaderWithoutParam(final Header header)
             throws HttpClientException
     {
+        String result = null;
+        
         // get the content type, only the mime string, like "type/subtype"
         if ( header != null ) {
-            HeaderElement[] elems = header.getElements();
-            if ( elems == null ) {
-                return null;
-            }
-            else if ( elems.length == 1 ) {
-                return elems[0].getName();
-            }
-            else {
-                throw new HttpClientException("Multiple Content-Type headers");
+            final HeaderElement[] elems = header.getElements();
+            
+            if(elems != null) {
+                if ( elems.length == 1 ) {
+                    result = elems[0].getName();
+                } else {
+                    throw new HttpClientException("Multiple Content-Type headers");
+                }
             }
         }
-        return null;
+        return result;
     }
 
-    private List<Header> myHeaders;
 }
 
 
@@ -156,5 +161,5 @@ public class HeaderSet
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

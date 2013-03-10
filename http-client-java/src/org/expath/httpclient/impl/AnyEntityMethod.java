@@ -17,31 +17,31 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 public class AnyEntityMethod
         extends HttpEntityEnclosingRequestBase
 {
-    public AnyEntityMethod(String method)
+    public String method;
+    
+    public AnyEntityMethod(final String method)
     {
         super();
-        METHOD_NAME = method;
+        this.method = method;
     }
 
-    public AnyEntityMethod(String method, URI uri)
+    public AnyEntityMethod(final String method, final URI uri)
     {
         super();
-        METHOD_NAME = method;
+        this.method = method;
         setURI(uri);
     }
 
-    public AnyEntityMethod(String method, String uri)
+    public AnyEntityMethod(final String method, final String uri)
     {
         super();
-        METHOD_NAME = method;
+        this.method = method;
         setURI(URI.create(uri));
     }
 
     @Override
     public String getMethod()
     {
-        return METHOD_NAME;
+        return method;
     }
-
-    public String METHOD_NAME;
 }

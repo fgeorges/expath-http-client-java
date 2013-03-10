@@ -35,40 +35,46 @@ import org.xml.sax.SAXException;
 public class XmlResponseBody
         implements HttpResponseBody
 {
-    public XmlResponseBody(Result result, InputStream in, ContentType type, HeaderSet headers, boolean html)
+    private final static String BODY_ELEMENT = "body";
+    private final static String MEDIA_TYPE_ATTR = "media-type";
+    
+    private ContentType myContentType;
+    private HeaderSet myHeaders;
+    
+    public XmlResponseBody(final Result result, final InputStream in, final ContentType type, final HeaderSet headers, final boolean html)
             throws HttpClientException
     {
         // TODO: ...
-        String charset = "utf-8";
+        final String charset = "utf-8";
         try {
-            Reader reader = new InputStreamReader(in, charset);
+            final Reader reader = new InputStreamReader(in, charset);
             init(result, reader, type, headers, html);
         }
-        catch ( UnsupportedEncodingException ex ) {
-            String msg = "not supported charset reading HTTP response: " + charset;
+        catch ( final UnsupportedEncodingException ex ) {
+            final String msg = "not supported charset reading HTTP response: " + charset;
             throw new HttpClientException(msg, ex);
         }
     }
 
-    public XmlResponseBody(Result result, Reader in, ContentType type, HeaderSet headers, boolean html)
+    public XmlResponseBody(final Result result, final Reader in, final ContentType type, final HeaderSet headers, final boolean html)
             throws HttpClientException
     {
         init(result, in, type, headers, html);
     }
 
-    private void init(Result result, Reader in, ContentType type, HeaderSet headers, boolean html)
+    private void init(final Result result, final Reader in, final ContentType type, final HeaderSet headers, final boolean html)
             throws HttpClientException
     {
         myContentType = type;
         myHeaders = headers;
-        String sys_id = "TODO-find-a-useful-systemId";
+        final String sys_id = "TODO-find-a-useful-systemId";
         try {
-            Source src;
+            final Source src;
             if ( html ) {
-                Parser parser = new Parser();
+                final Parser parser = new Parser();
                 parser.setFeature(Parser.namespacesFeature, true);
                 parser.setFeature(Parser.namespacePrefixesFeature, true);
-                InputSource input = new InputSource(in);
+                final InputSource input = new InputSource(in);
                 src = new SAXSource(parser, input);
                 src.setSystemId(sys_id);
             }
@@ -77,27 +83,24 @@ public class XmlResponseBody
             }
             result.add(src);
         }
-        catch ( SAXException ex ) {
+        catch ( final SAXException ex ) {
             throw new HttpClientException("error parsing result HTML", ex);
         }
     }
 
     @Override
-    public void outputBody(TreeBuilder b)
+    public void outputBody(final TreeBuilder b)
             throws HttpClientException
     {
         if ( myHeaders != null ) {
             b.outputHeaders(myHeaders);
         }
-        b.startElem("body");
-        b.attribute("media-type", myContentType.getValue());
+        b.startElem(BODY_ELEMENT);
+        b.attribute(MEDIA_TYPE_ATTR, myContentType.getValue());
         // TODO: Support other attributes as well?
         b.startContent();
         b.endElem();
     }
-
-    private ContentType myContentType;
-    private HeaderSet myHeaders;
 }
 
 
@@ -118,5 +121,5 @@ public class XmlResponseBody
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

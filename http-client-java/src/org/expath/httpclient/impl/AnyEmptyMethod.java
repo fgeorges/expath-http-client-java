@@ -17,31 +17,31 @@ import org.apache.http.client.methods.HttpRequestBase;
 public class AnyEmptyMethod
         extends HttpRequestBase
 {
-    public AnyEmptyMethod(String method)
+    private final String method;
+    
+    public AnyEmptyMethod(final String method)
     {
         super();
-        METHOD_NAME = method;
+        this.method = method;
     }
 
-    public AnyEmptyMethod(String method, URI uri)
+    public AnyEmptyMethod(final String method, final URI uri)
     {
         super();
-        METHOD_NAME = method;
+        this.method = method;
         setURI(uri);
     }
 
-    public AnyEmptyMethod(String method, String uri)
+    public AnyEmptyMethod(final String method, final String uri)
     {
         super();
-        METHOD_NAME = method;
+        this.method = method;
         setURI(URI.create(uri));
     }
 
     @Override
     public String getMethod()
     {
-        return METHOD_NAME;
+        return method;
     }
-
-    public String METHOD_NAME;
 }

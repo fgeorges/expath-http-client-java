@@ -23,44 +23,44 @@ import org.apache.http.cookie.Cookie;
  */
 public class LoggerHelper
 {
-    public static void logCookies(Log log, String prompt, Iterable<Cookie> cookies)
+    public static void logCookies(final Log log, final String prompt, final Iterable<Cookie> cookies)
     {
         if ( log.isDebugEnabled() ) {
             if ( cookies == null ) {
                 log.debug(prompt + ": null");
                 return;
             }
-            for ( Cookie c : cookies ) {
+            for ( final Cookie c : cookies ) {
                 log.debug(prompt + ": " + c.getName() + ": " + c.getValue());
             }
         }
     }
 
-    public static void logHeaders(Log log, String prompt, Header[] headers)
+    public static void logHeaders(final Log log, final String prompt, final Header[] headers)
     {
         if ( log.isDebugEnabled() ) {
             if ( headers == null ) {
                 log.debug(prompt + ": null");
                 return;
             }
-            for ( Header h : headers ) {
+            for ( final Header h : headers ) {
                 log.debug(prompt + ": " + h.getName() + ": " + h.getValue());
             }
         }
     }
 
-    public static void logHeaderDetails(Log log, String prompt, Iterable<Header> headers)
+    public static void logHeaderDetails(final Log log, final String prompt, final Iterable<Header> headers)
     {
         if ( log.isDebugEnabled() ) {
             if ( headers == null ) {
                 log.debug(prompt + ": null");
                 return;
             }
-            for ( Header h : headers ) {
+            for ( final Header h : headers ) {
                 log.debug(prompt + " - HEADER: " + h.getName() + ": " + h.getValue());
-                for ( HeaderElement e : h.getElements() ) {
+                for ( final HeaderElement e : h.getElements() ) {
                     log.debug(prompt + " -   ELEM: " + e.getName() + ": " + e.getValue());
-                    for ( NameValuePair p : e.getParameters() ) {
+                    for ( final NameValuePair p : e.getParameters() ) {
                         log.debug(prompt + " -     P: " + p.getName() + ": " + p.getValue());
                     }
                 }

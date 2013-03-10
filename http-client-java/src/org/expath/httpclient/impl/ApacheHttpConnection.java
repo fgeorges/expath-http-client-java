@@ -32,6 +32,7 @@ import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpTrace;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.params.ClientPNames;
@@ -61,7 +62,84 @@ import org.expath.httpclient.HttpRequestBody;
 public class ApacheHttpConnection
         implements HttpConnection
 {
-    public ApacheHttpConnection(URI uri)
+    
+    
+    /**
+     * The shared cookie store.
+     *
+     * TODO: Make it possible to serialize the cookies to disk?
+     */
+    private static final CookieStore COOKIES = new BasicCookieStore();
+    /** The logger. */
+    private static final Log LOG = LogFactory.getLog(ApacheHttpConnection.class);
+    
+    private static final String ONE_DOT_ZERO = "1.0";
+    private static final String ONE_DOT_ONE = "1.1";
+    private static final String HTTP_PROTOCOL_VERSION = "http.protocol.version";
+    private static final String HTTP_SCHEME = "http";
+    private static final String HTTPS_SCHEME = "https";
+    
+    
+    /** The target URI. */
+    private final URI myUri;
+    /** The Apache request. */
+    private HttpUriRequest myRequest;
+    /** The Apache response. */
+    private HttpResponse myResponse;
+    /** The HTTP protocol version. */
+    private HttpVersion myVersion;
+    /** The Apache client. */
+    private AbstractHttpClient myClient;
+    /** Follow HTTP redirect? */
+    private boolean myFollowRedirect = true;
+    /** The timeout to use, in seconds, or null for default. */
+    private Integer myTimeout = null;
+
+    /**
+     * The HTTP version (1.0 or 1.1) to use by default.
+     * 
+     * Configurable by the system property {@code org.expath.hc.http.version}.
+     * By default, use HTTP 1.1.  Can be set on a per-request basis, by setting
+     * the {@code http:request/@http} attribute.
+     */
+    private static HttpVersion DEFAULT_HTTP_VERSION = HttpVersion.HTTP_1_1;
+    static {
+        String ver = System.getProperty("org.expath.hc.http.version");
+        if ( ver != null ) {
+            ver = ver.trim();
+            if ( ONE_DOT_ZERO.equals(ver) ) {
+                DEFAULT_HTTP_VERSION = HttpVersion.HTTP_1_0;
+            }
+            else if ( ONE_DOT_ONE.equals(ver) ) {
+                DEFAULT_HTTP_VERSION = HttpVersion.HTTP_1_1;
+            }
+            else {
+                final String msg = "Wrong HTTP version: " + ver + " (check org.expath.hc.http.version)";
+                throw new RuntimeException(msg);
+            }
+        }
+    }
+    
+    /*
+    private static final boolean[] METHOD_CHARS = new boolean[128];
+    static {
+        // SP = 32, HT = 9, so any char between 33 and 126 incl., minus
+        // explicitly excluded chars...
+        final String excl = "()<>@,;:\\\"/[]?={}";
+        for ( char c = 0; c < 128; ++ c ) {
+            if ( c < 33 || c == 127 ) {
+                METHOD_CHARS[c] = false;
+            }
+            else if ( excl.indexOf(c) == -1 ) {
+                METHOD_CHARS[c] = true;
+            }
+            else {
+                METHOD_CHARS[c] = false;
+            }
+        }
+    }*/
+    
+    public ApacheHttpConnection(final URI uri)
     {
         myUri = uri;
         myRequest = null;
@@ -70,7 +148,8 @@ public class ApacheHttpConnection
         myClient = null;
     }
 
-    public void connect(HttpRequestBody body, HttpCredentials cred)
+    @Override
+    public void connect(final HttpRequestBody body, final HttpCredentials cred)
             throws HttpClientException
     {
         if ( myRequest == null ) {
@@ -86,7 +165,7 @@ public class ApacheHttpConnection
             // log the request headers?
             if ( LOG.isDebugEnabled() ) {
                 LOG.debug("METHOD: " + myRequest.getMethod());
-                Header[] headers = myRequest.getAllHeaders();
+                final Header[] headers = myRequest.getAllHeaders();
                 LoggerHelper.logHeaders(LOG, "REQ HEADERS", headers);
                 LoggerHelper.logCookies(LOG, "COOKIES", COOKIES.getCookies());
             }
@@ -99,16 +178,17 @@ public class ApacheHttpConnection
 
             // log the response headers?
             if ( LOG.isDebugEnabled() ) {
-                Header[] headers = myResponse.getAllHeaders();
+                final Header[] headers = myResponse.getAllHeaders();
                 LoggerHelper.logHeaders(LOG, "RESP HEADERS", headers);
                 LoggerHelper.logCookies(LOG, "COOKIES", COOKIES.getCookies());
             }
         }
-        catch ( IOException ex ) {
+        catch ( final IOException ex ) {
             throw new HttpClientException("Error executing the HTTP method: " + ex.getMessage(), ex);
         }
     }
 
+    @Override
     public void disconnect()
     {
         if ( myClient != null ) {
@@ -116,11 +196,12 @@ public class ApacheHttpConnection
         }
     }
 
-    public void setHttpVersion(String ver)
+    @Override
+    public void setHttpVersion(final String ver)
             throws HttpClientException
     {
         if ( myClient != null ) {
-            String msg = "Internal error, HTTP version cannot been "
+            final String msg = "Internal error, HTTP version cannot been "
                     + "set after connect() has been called.";
             throw new HttpClientException(msg);
         }
@@ -135,7 +216,8 @@ public class ApacheHttpConnection
         }
     }
 
-    public void setRequestHeaders(HeaderSet headers)
+    @Override
+    public void setRequestHeaders(final HeaderSet headers)
             throws HttpClientException
     {
         if ( myRequest == null ) {
@@ -143,53 +225,40 @@ public class ApacheHttpConnection
         }
         myRequest.setHeaders(headers.toArray());
     }
-
-    public void setRequestMethod(String method, boolean with_content)
+    
+    @Override
+    public void setRequestMethod(final String method, final boolean with_content)
             throws HttpClientException
     {
-        if ( LOG.isInfoEnabled() ) {
+        if ( LOG.isInfoEnabled() )
+        {
             LOG.debug("Request method: " + method + " (" + with_content + ")");
         }
-        String uri = myUri.toString();
-        String m = method.toUpperCase();
-        if ( "DELETE".equals(m) ) {
-            myRequest = new HttpDelete(uri);
+        final String uri = myUri.toString();
+        
+        final ApacheHttp11Method m = ApacheHttp11Method.valueOf(method.toUpperCase());
+        if ( m != null )
+        {
+            myRequest = m.getHttpUriRequest(uri);
         }
-        else if ( "GET".equals(m) ) {
-            myRequest = new HttpGet(uri);
+        else if ( with_content )
+        {
+            myRequest = new AnyEntityMethod(method, uri);
         }
-        else if ( "HEAD".equals(m) ) {
-            myRequest = new HttpHead(uri);
-        }
-        else if ( "OPTIONS".equals(m) ) {
-            myRequest = new HttpOptions(uri);
-        }
-        else if ( "POST".equals(m) ) {
-            myRequest = new HttpPost(uri);
-        }
-        else if ( "PUT".equals(m) ) {
-            myRequest = new HttpPut(uri);
-        }
-        else if ( "TRACE".equals(m) ) {
-            myRequest = new HttpTrace(uri);
-        }
-        else if ( ! checkMethodName(method) ) {
-            throw new HttpClientException("Invalid HTTP method name [" + method + "]");
-        }
-        else if ( with_content ) {
-            myRequest = new AnyEntityMethod(m, uri);
-        }
-        else {
-            myRequest = new AnyEmptyMethod(m, uri);
+        else
+        {
+            myRequest = new AnyEmptyMethod(method, uri);
         }
     }
 
-    public void setFollowRedirect(boolean follow)
+    @Override
+    public void setFollowRedirect(final boolean follow)
     {
         myFollowRedirect = follow;
     }
 
-    public void setTimeout(int seconds)
+    @Override
+    public void setTimeout(final int seconds)
     {
         myTimeout = seconds;
     }
@@ -221,44 +290,31 @@ public class ApacheHttpConnection
      *                    | "/" | "[" | "]" | "?" | "="
      *                    | "{" | "}" | SP | HT
      */
-    private boolean checkMethodName(String method)
+    /*
+    private boolean checkMethodName(final String method)
     {
-        for ( char c : method.toCharArray() ) {
+        for ( final char c : method.toCharArray() ) {
             if ( c > 127 || ! METHOD_CHARS[c] ) {
                 return false;
             }
         }
         return true;
     }
+    */
 
-    private static final boolean[] METHOD_CHARS = new boolean[128];
-    static {
-        // SP = 32, HT = 9, so any char between 33 and 126 incl., minus
-        // explicitly excluded chars...
-        String excl = "()<>@,;:\\\"/[]?={}";
-        for ( char c = 0; c < 128; ++ c ) {
-            if ( c < 33 || c == 127 ) {
-                METHOD_CHARS[c] = false;
-            }
-            else if ( excl.indexOf(c) == -1 ) {
-                METHOD_CHARS[c] = true;
-            }
-            else {
-                METHOD_CHARS[c] = false;
-            }
-        }
-    }
-
+    @Override
     public int getResponseStatus()
     {
         return myResponse.getStatusLine().getStatusCode();
     }
 
+    @Override
     public String getResponseMessage()
     {
         return myResponse.getStatusLine().getReasonPhrase();
     }
 
+    @Override
     public HeaderSet getResponseHeaders()
             throws HttpClientException
     {
@@ -269,14 +325,15 @@ public class ApacheHttpConnection
      * TODO: How to use Apache HTTP Client facilities for response content
      * handling, instead of parsing this stream myself?
      */
+    @Override
     public InputStream getResponseStream()
             throws HttpClientException
     {
         try {
-            HttpEntity entity = myResponse.getEntity();
+            final HttpEntity entity = myResponse.getEntity();
             return entity == null ? null : entity.getContent();
         }
-        catch ( IOException ex ) {
+        catch ( final IOException ex ) {
             throw new HttpClientException("Error getting the HTTP response stream", ex);
         }
     }
@@ -286,10 +343,10 @@ public class ApacheHttpConnection
      */
     private AbstractHttpClient makeClient()
     {
-        AbstractHttpClient client = new DefaultHttpClient();
-        HttpParams params = client.getParams();
+        final AbstractHttpClient client = new DefaultHttpClient();
+        final HttpParams params = client.getParams();
         // use the default JVM proxy settings (http.proxyHost, etc.)
-        HttpRoutePlanner route = new ProxySelectorRoutePlanner(
+        final HttpRoutePlanner route = new ProxySelectorRoutePlanner(
                 client.getConnectionManager().getSchemeRegistry(),
                 ProxySelector.getDefault());
         client.setRoutePlanner(route);
@@ -304,7 +361,7 @@ public class ApacheHttpConnection
         // the shared cookie store
         client.setCookieStore(COOKIES);
         // the HTTP version (1.0 or 1.1)
-        params.setParameter("http.protocol.version", myVersion);
+        params.setParameter(HTTP_PROTOCOL_VERSION, myVersion);
         // return the just built client
         return client;
     }
@@ -312,54 +369,55 @@ public class ApacheHttpConnection
     /**
      * Set the credentials on the client, based on the {@link HttpCredentials} object.
      */
-    private void setCredentials(HttpCredentials cred)
+    private void setCredentials(final HttpCredentials cred)
             throws HttpClientException
     {
         if ( cred == null ) {
             return;
         }
-        URI uri = myRequest.getURI();
+        final URI uri = myRequest.getURI();
         int port = uri.getPort();
         if ( port == -1 ) {
-            String scheme = uri.getScheme();
-            if ( "http".equals(scheme) ) {
+            final String scheme = uri.getScheme();
+            if ( HTTP_SCHEME.equals(scheme) ) {
                 port = 80;
             }
-            else if ( "https".equals(scheme) ) {
+            else if ( HTTPS_SCHEME.equals(scheme) ) {
                 port = 443;
             }
             else {
                 throw new HttpClientException("Unknown scheme: " + uri);
             }
         }
-        String host = uri.getHost();
-        String user = cred.getUser();
-        String pwd = cred.getPwd();
+        final String host = uri.getHost();
+        final String user = cred.getUser();
+        final String pwd = cred.getPwd();
         if ( LOG.isDebugEnabled() ) {
             LOG.debug("Set credentials for " + host + ":" + port
                     + " - " + user + " - ***");
         }
-        Credentials c = new UsernamePasswordCredentials(user, pwd);
-        AuthScope scope = new AuthScope(host, port);
+        final Credentials c = new UsernamePasswordCredentials(user, pwd);
+        final AuthScope scope = new AuthScope(host, port);
         myClient.getCredentialsProvider().setCredentials(scope, c);
     }
 
     /**
      * Configure the request to get its entity body from the {@link HttpRequestBody}.
      */
-    private void setRequestEntity(HttpRequestBody body)
+    private void setRequestEntity(final HttpRequestBody body)
             throws HttpClientException
     {
         if ( body == null ) {
             return;
         }
+        
         // make the entity from a new producer
-        HttpEntity entity;
+        final HttpEntity entity;
         if ( myVersion == HttpVersion.HTTP_1_1 ) {
             // Take advantage of HTTP 1.1 chunked encoding to stream the
             // payload directly to the request.
-            ContentProducer producer = new RequestBodyProducer(body);
-            EntityTemplate template = new EntityTemplate(producer);
+            final ContentProducer producer = new RequestBodyProducer(body);
+            final EntityTemplate template = new EntityTemplate(producer);
             template.setContentType(body.getContentType());
             entity = template;
         }
@@ -367,14 +425,14 @@ public class ApacheHttpConnection
             // With HTTP 1.0, chunked encoding is not supported, so first
             // serialize into memory and use the resulting byte array as the
             // entity payload.
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             body.serialize(buffer);
             entity = new ByteArrayEntity(buffer.toByteArray());
         }
         // cast the request
-        HttpEntityEnclosingRequestBase req = null;
+        final HttpEntityEnclosingRequestBase req;
         if ( ! (myRequest instanceof HttpEntityEnclosingRequestBase) ) {
-            String msg = "Body not allowed on a " + myRequest.getMethod() + " request";
+            final String msg = "Body not allowed on a " + myRequest.getMethod() + " request";
             throw new HttpClientException(msg);
         }
         else {
@@ -384,77 +442,121 @@ public class ApacheHttpConnection
         req.setEntity(entity);
     }
 
-    /** The target URI. */
-    private URI myUri;
-    /** The Apache request. */
-    private HttpUriRequest myRequest;
-    /** The Apache response. */
-    private HttpResponse myResponse;
-    /** The HTTP protocol version. */
-    private HttpVersion myVersion;
-    /** The Apache client. */
-    private AbstractHttpClient myClient;
-    /** Follow HTTP redirect? */
-    private boolean myFollowRedirect = true;
-    /** The timeout to use, in seconds, or null for default. */
-    private Integer myTimeout = null;
-    /**
-     * The shared cookie store.
-     *
-     * TODO: Make it possible to serialize the cookies to disk?
-     */
-    private static final CookieStore COOKIES = new BasicCookieStore();
-    /** The logger. */
-    private static final Log LOG = LogFactory.getLog(ApacheHttpConnection.class);
-
-    /**
-     * The HTTP version (1.0 or 1.1) to use by default.
-     * 
-     * Configurable by the system property {@code org.expath.hc.http.version}.
-     * By default, use HTTP 1.1.  Can be set on a per-request basis, by setting
-     * the {@code http:request/@http} attribute.
-     */
-    private static HttpVersion DEFAULT_HTTP_VERSION = HttpVersion.HTTP_1_1;
-    static {
-        String ver = System.getProperty("org.expath.hc.http.version");
-        if ( ver != null ) {
-            ver = ver.trim();
-            if ( "1.0".equals(ver) ) {
-                DEFAULT_HTTP_VERSION = HttpVersion.HTTP_1_0;
-            }
-            else if ( "1.1".equals(ver) ) {
-                DEFAULT_HTTP_VERSION = HttpVersion.HTTP_1_1;
-            }
-            else {
-                String msg = "Wrong HTTP version: " + ver + " (check org.expath.hc.http.version)";
-                throw new RuntimeException(msg);
-            }
-        }
-    }
-
     /**
      * A request entity producer, generating content from an {@link HttpRequestBody}.
      */
     private static class RequestBodyProducer
             implements ContentProducer
     {
-        public RequestBodyProducer(HttpRequestBody body)
+        public RequestBodyProducer(final HttpRequestBody body)
         {
             myBody = body;
         }
 
-        public void writeTo(OutputStream out)
+        @Override
+        public void writeTo(final OutputStream out)
                 throws IOException
         {
             try {
                 myBody.serialize(out);
             }
-            catch ( HttpClientException ex ) {
+            catch ( final HttpClientException ex ) {
                 throw new IOException("Error serializing the body content", ex);
             }
         }
 
         private HttpRequestBody myBody;
+    }
+    
+    /**
+     * Simple Interface to enable deferment of Apache HttpRequestBase object
+     * construction, just used by the ApacheHttp11Method Enumeration
+     */
+    private interface HttpMethodForUri {
+        public HttpRequestBase forUri(final URI uri);
+    }
+    
+    /**
+     * Simple Enumeration to wire HTTP Methods and URIs to
+     * the corresponding Apache HttpRequestUri class
+     * in a type-safe manner
+     */
+    private enum ApacheHttp11Method {
+        DELETE(new HttpMethodForUri() {
+            @Override
+            public HttpRequestBase forUri(final URI uri) {
+                return new HttpDelete(uri);
+            }
+        }),
+        GET(new HttpMethodForUri() {
+            @Override
+            public HttpRequestBase forUri(final URI uri) {
+                return new HttpGet(uri);
+            }
+        }),
+        HEAD(new HttpMethodForUri() {
+            @Override
+            public HttpRequestBase forUri(final URI uri) {
+                return new HttpHead(uri);
+            }
+        }),
+        OPTIONS(new HttpMethodForUri() {
+            @Override
+            public HttpRequestBase forUri(final URI uri) {
+                return new HttpOptions(uri);
+            }
+        }),
+        POST(new HttpMethodForUri() {
+            @Override
+            public HttpRequestBase forUri(final URI uri) {
+                return new HttpPost(uri);
+            }
+        }),
+        PUT(new HttpMethodForUri() {
+            @Override
+            public HttpRequestBase forUri(final URI uri) {
+                return new HttpPut(uri);
+            }
+        }),
+        TRACE(new HttpMethodForUri() {
+            @Override
+            public HttpRequestBase forUri(final URI uri) {
+                return new HttpTrace(uri);
+            }
+        });
+        
+        private final HttpMethodForUri httpMethodForUri;
+        
+        ApacheHttp11Method(final HttpMethodForUri httpMethodForUri) {
+            this.httpMethodForUri = httpMethodForUri;
+        }    
+        
+        /**
+         * Gets an Apache HttpUriRequest for a URI for the HTTP Method of the 
+         * Enumeration constant
+         *
+         * @param uri The URI for the HTTP Request
+         * @return HttpUriRequest for the URI and Method
+         */
+        public HttpUriRequest getHttpUriRequest(final String uri) {
+            return httpMethodForUri.forUri(URI.create(uri));
+        }
+        
+        /**
+         * Just like Enum.valueOf but instead of throwing
+         * IllegalArgumentException if there is no enum constant, we return null
+         * instead
+         * 
+         * @param The name of a constant in the Enumeration
+         * @return The Enumeration Constant
+         */
+        public static ApacheHttp11Method valueOfOrNull(final String name) {
+            try {
+                return valueOf(name.toUpperCase());
+            } catch(final IllegalArgumentException iae) {
+                return null;
+            }
+        } 
     }
 }
 
@@ -476,5 +578,5 @@ public class ApacheHttpConnection
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

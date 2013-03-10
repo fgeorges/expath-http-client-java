@@ -17,7 +17,11 @@ package org.expath.httpclient;
  */
 public class HttpCredentials
 {
-    public HttpCredentials(String user, String pwd, String method) {
+    private String myUser;
+    private String myPwd;
+    private String myMethod;
+    
+    public HttpCredentials(final String user, final String pwd, final String method) {
         myUser = user;
         myPwd = pwd;
         myMethod = method;
@@ -31,9 +35,6 @@ public class HttpCredentials
     public String getMethod() {
         return myMethod;
     }
-    private String myUser;
-    private String myPwd;
-    private String myMethod;
 }
 
 
@@ -54,5 +55,5 @@ public class HttpCredentials
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s):  Adam Retter                                            */
 /* ------------------------------------------------------------------------ */

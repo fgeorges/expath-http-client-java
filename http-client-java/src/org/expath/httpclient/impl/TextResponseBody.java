@@ -30,67 +30,72 @@ import org.expath.httpclient.model.TreeBuilder;
  */
 public class TextResponseBody
         implements HttpResponseBody
-{
-    public TextResponseBody(Result result, InputStream in, ContentType type, HeaderSet headers)
+{   
+    private final static String BODY_ELEMENT = "body";
+    private final static String MEDIA_TYPE_ATTR = "media-type";
+    
+    private ContentType myContentType;
+    private HeaderSet myHeaders;
+    
+    public TextResponseBody(final Result result, final InputStream in, final ContentType type, final HeaderSet headers)
             throws HttpClientException
     {
         // FIXME: ...
-        String charset = "utf-8";
+        final String charset = "utf-8";
         try {
-            Reader reader = new InputStreamReader(in, charset);
+            final Reader reader = new InputStreamReader(in, charset);
             init(result, reader, type, headers);
         }
-        catch ( UnsupportedEncodingException ex ) {
-            String msg = "not supported charset reading HTTP response: " + charset;
+        catch ( final UnsupportedEncodingException ex ) {
+            final String msg = "not supported charset reading HTTP response: " + charset;
             throw new HttpClientException(msg, ex);
         }
     }
 
-    public TextResponseBody(Result result, Reader in, ContentType type, HeaderSet headers)
+    public TextResponseBody(final Result result, final Reader in, final ContentType type, final HeaderSet headers)
             throws HttpClientException
     {
         init(result, in, type, headers);
     }
 
-    private void init(Result result, Reader in, ContentType type, HeaderSet headers)
+    private void init(final Result result, final Reader in, final ContentType type, final HeaderSet headers)
             throws HttpClientException
     {
         myContentType = type;
         myHeaders = headers;
         // BufferedReader handles the ends of line (all \n, \r, and \r\n are
         // transformed to \n)
+        BufferedReader buf_in = null;
         try {
-            StringBuilder builder = new StringBuilder();
-            BufferedReader buf_in = new BufferedReader(in);
+            final StringBuilder builder = new StringBuilder();
+            buf_in = new BufferedReader(in);
+            
             String buf = null;
             while ( (buf = buf_in.readLine()) != null ) {
                 builder.append(buf);
                 builder.append('\n');
             }
-            String value = builder.toString();
+            final String value = builder.toString();
             result.add(value);
         }
-        catch ( IOException ex ) {
+        catch ( final IOException ex ) {
             throw new HttpClientException("error reading HTTP response", ex);
         }
     }
 
     @Override
-    public void outputBody(TreeBuilder b)
+    public void outputBody(final TreeBuilder b)
             throws HttpClientException
     {
         if ( myHeaders != null ) {
             b.outputHeaders(myHeaders);
         }
-        b.startElem("body");
-        b.attribute("media-type", myContentType.getValue());
+        b.startElem(BODY_ELEMENT);
+        b.attribute(MEDIA_TYPE_ATTR, myContentType.getValue());
         // TODO: Support other attributes as well?
         b.startContent();
         b.endElem();
     }
-
-    private ContentType myContentType;
-    private HeaderSet myHeaders;
 }
 
 
@@ -111,5 +116,5 @@ public class TextResponseBody
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

@@ -18,12 +18,12 @@ package org.expath.httpclient;
 public class HttpClientException
         extends Exception
 {
-    public HttpClientException(String msg)
+    public HttpClientException(final String msg)
     {
         super(msg);
     }
 
-    public HttpClientException(String msg, Throwable cause)
+    public HttpClientException(final String msg, final Throwable cause)
     {
         super(msg, cause);
     }
@@ -47,5 +47,5 @@ public class HttpClientException
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

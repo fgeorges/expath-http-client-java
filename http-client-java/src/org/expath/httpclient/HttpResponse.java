@@ -21,7 +21,13 @@ import org.expath.httpclient.model.TreeBuilder;
  */
 public class HttpResponse
 {
-    public HttpResponse(int status, String msg, HeaderSet headers, HttpResponseBody body, long time)
+    private final int myStatus;
+    private final String myMessage;
+    private final HeaderSet myHeaders;
+    private final HttpResponseBody myBody;
+    private final long myTime;
+    
+    public HttpResponse(final int status, final String msg, final HeaderSet headers, final HttpResponseBody body, final long time)
     {
         myStatus = status;
         myMessage = msg;
@@ -45,7 +51,7 @@ public class HttpResponse
         return myBody;
     }
 
-    public void outputResponseElement(TreeBuilder b)
+    public void outputResponseElement(final TreeBuilder b)
             throws HttpClientException
     {
         b.startElem("response");
@@ -61,12 +67,6 @@ public class HttpResponse
         // end the response element
         b.endElem();
     }
-
-    private int myStatus;
-    private String myMessage;
-    private HeaderSet myHeaders;
-    private HttpResponseBody myBody;
-    private long myTime;
 }
 
 
@@ -87,5 +87,5 @@ public class HttpResponse
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

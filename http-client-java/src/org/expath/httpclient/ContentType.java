@@ -25,45 +25,57 @@ import org.apache.http.NameValuePair;
  */
 public class ContentType
 {
-    public ContentType(String type, String boundary)
+    public final static String CONTENT_TYPE_HEADER = "Content-Type";
+    private final static String BOUNDARY = "boundary";
+    
+    private final Header myHeader;
+    private final String myType;
+    private final String myBoundary;
+    
+    public ContentType(final String type, final String boundary)
     {
         myHeader = null;
         myType = type;
         myBoundary = boundary;
     }
 
-    public ContentType(Header h)
+    public ContentType(final Header h)
             throws HttpClientException
     {
         if ( h == null ) {
             throw new HttpClientException("Header is null");
         }
-        if ( ! "Content-Type".equalsIgnoreCase(h.getName()) ) {
+        if ( ! CONTENT_TYPE_HEADER.equalsIgnoreCase(h.getName()) ) {
             throw new HttpClientException("Header is not content type");
         }
         myHeader = h;
         myType = HeaderSet.getHeaderWithoutParam(myHeader);
-        HeaderElement[] elems = h.getElements();
+        String boundaryVal = null;
+        final HeaderElement[] elems = h.getElements();
         if ( elems != null ) {
-            for ( HeaderElement e : elems ) {
-                for ( NameValuePair p : e.getParameters() ) {
-                    if ( "boundary".equals(p.getName()) ) {
-                        myBoundary = p.getValue();
+            for ( final HeaderElement e : elems ) {
+                for ( final NameValuePair p : e.getParameters() ) {
+                    if ( BOUNDARY.equals(p.getName()) ) {
+                        boundaryVal = p.getValue();
                     }
                 }
             }
         }
+        
+        myBoundary = boundaryVal;
     }
 
     @Override
     public String toString()
     {
+        final String str;
         if ( myHeader == null ) {
-            return "Content-Type: " + getValue();
+            str = CONTENT_TYPE_HEADER + ": " + getValue();
         }
         else {
-            return myHeader.toString();
+            str = myHeader.toString();
         }
+        return str;
     }
 
     public String getType()
@@ -90,20 +102,14 @@ public class ContentType
 //            }
 //            return b.toString();
 //        }
+        String value = null;
         if ( myType != null ) {
-            return myType;
+            value = myType;
+        } else if ( myHeader != null ) {
+            value = myHeader.getValue();
         }
-        if ( myHeader != null ) {
-            return myHeader.getValue();
-        }
-        else {
-            return null;
-        }
+        return value;
     }
-
-    private Header myHeader;
-    private String myType;
-    private String myBoundary;
 }
 
 
@@ -124,5 +130,5 @@ public class ContentType
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

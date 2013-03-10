@@ -32,32 +32,33 @@ package org.expath.httpclient;
  */
 public class SerializationParams
 {
+    private String myEncoding;
+    private Boolean myIndent;
+    private Boolean myOmitXmlDecl;
+    
     // encoding
     public String getEncoding() {
         return myEncoding;
     }
-    public void setEncoding(String s) {
+    public void setEncoding(final String s) {
         myEncoding = s;
     }
-    private String myEncoding;
 
     // indent
     public Boolean getIndent() {
         return myIndent;
     }
-    public void setIndent(Boolean b) {
+    public void setIndent(final Boolean b) {
         myIndent = b;
     }
-    private Boolean myIndent;
 
     // omit-xml-declaration
     public Boolean getOmitXmlDecl() {
         return myOmitXmlDecl;
     }
-    public void setOmitXmlDecl(Boolean b) {
+    public void setOmitXmlDecl(final Boolean b) {
         myOmitXmlDecl = b;
     }
-    private Boolean myOmitXmlDecl;
 }
 
 
@@ -78,5 +79,5 @@ public class SerializationParams
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.util.Properties;
 import javax.xml.transform.OutputKeys;
 import net.iharder.Base64;
+import org.expath.httpclient.ContentType;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpRequestBody;
@@ -30,15 +31,20 @@ import org.expath.httpclient.model.Sequence;
 public class SinglePartRequestBody
         extends HttpRequestBody
 {
+    
+    private final Type myMethod;
+    private final Sequence myChilds;
+    private final SerializationParams mySerial = new SerializationParams();
+    
     //
     // TODO: FIXME: Take serialization attributes into account!
     //
-    public SinglePartRequestBody(Element elem, Sequence bodies, Type method)
+    public SinglePartRequestBody(final Element elem, final Sequence bodies, final Type method)
             throws HttpClientException
     {
         super(elem);
         myMethod = method;
-        String[] attr_names = {
+        final String[] attr_names = {
             "src",
             "media-type",
             "method",
@@ -63,7 +69,7 @@ public class SinglePartRequestBody
         {
             // FIXME: For now, most of the attrs are not supported.  Throw an
             // error if any of them is there...
-            String[] NOT_SUPPORTED_ATTRS = {
+            final String[] NOT_SUPPORTED_ATTRS = {
                 "byte-order-mark",
                 "cdata-section-elements",
                 "doctype-public",
@@ -76,8 +82,8 @@ public class SinglePartRequestBody
                 "version"
             };
             for ( int i = 0; i < NOT_SUPPORTED_ATTRS.length; ++i ) {
-                String name = NOT_SUPPORTED_ATTRS[i];
-                String val = elem.getAttribute(name);
+                final String name = NOT_SUPPORTED_ATTRS[i];
+                final String val = elem.getAttribute(name);
                 if ( val != null ) {
                     throw new HttpClientException("Attribute not supported yet: http:body/@" + name);
                 }
@@ -86,11 +92,14 @@ public class SinglePartRequestBody
         // check for not allowed attributes
         elem.noOtherNCNameAttribute(attr_names);
         // handle childs
-        myChilds = getBodyElement().getContent();
-        // If there is no content in the http:body element, take the next item
-        // in the $bodies parameter.
-        if ( myChilds.isEmpty() ) {
-            Sequence body = bodies.next();
+        
+        if(!getBodyElement().getContent().isEmpty()) {
+            myChilds = getBodyElement().getContent();
+        } else {
+            // If there is no content in the http:body element, take the next item
+            // in the $bodies parameter.
+        
+            final Sequence body = bodies.next();
             if ( body == null ) {
                 throw new HttpClientException("There is not enough items within $bodies");
             }
@@ -98,27 +107,31 @@ public class SinglePartRequestBody
         }
     }
 
-    private Boolean parseYesNo(Element elem, String attr_name)
+    private Boolean parseYesNo(final Element elem, final String attr_name)
             throws HttpClientException
     {
-        String val = elem.getAttribute(attr_name);
+        final Boolean result;
+        
+        final String val = elem.getAttribute(attr_name);
         if ( val == null ) {
-            return null;
+            result = null;
         }
         else if ( "yes".equals(val) ) {
-            return Boolean.TRUE;
+            result = Boolean.TRUE;
         }
         else if ( "no".equals(val) ) {
-            return Boolean.FALSE;
+            result = Boolean.FALSE;
         }
         else {
-            String msg = "Incorrect value for " + attr_name + ": " + val;
+            final String msg = "Incorrect value for " + attr_name + ": " + val;
             throw new HttpClientException(msg);
         }
+        
+        return result;
     }
 
     @Override
-    public void setHeaders(HeaderSet headers)
+    public void setHeaders(final HeaderSet headers)
             throws HttpClientException
     {
         // set the Content-Type header (if not set by the user)
@@ -139,7 +152,7 @@ public class SinglePartRequestBody
             else if ( mySerial.getEncoding() != null ) {
                 throw new HttpClientException("Encoding is not allowed with method '" + myMethod + "'");
             }
-            headers.add("Content-Type", type);
+            headers.add(ContentType.CONTENT_TYPE_HEADER, type);
         }
     }
 
@@ -148,7 +161,7 @@ public class SinglePartRequestBody
             throws HttpClientException
     {
         // the default serialization options
-        Properties options = getSerializationParams();
+        final Properties options = getSerializationParams();
         if ( myMethod == Type.HEX ) {
             // TODO: Add support for HEX (== "base16")
             // out = new Base16.OutputStream(out, Base16.DECODE);
@@ -169,28 +182,34 @@ public class SinglePartRequestBody
     public Properties getSerializationParams()
             throws HttpClientException
     {
-        Properties props = new Properties();
+        final Properties props = new Properties();
         // method
         switch ( myMethod ) {
             case XML:
                 props.put(OutputKeys.METHOD, "xml");
                 break;
+                
             case TEXT:
                 props.put(OutputKeys.METHOD, "text");
                 break;
+                
             case HTML:
                 props.put(OutputKeys.METHOD, "html");
                 break;
+                
             case XHTML:
                 props.put(OutputKeys.METHOD, "xhtml");
                 break;
+                
             case BINARY:
             case BASE64:
                 props.put(OutputKeys.METHOD, "expath:base64");
                 break;
+                
             case HEX:
                 props.put(OutputKeys.METHOD, "expath:hex");
                 break;
+                
             default:
                 throw new HttpClientException("Unsupported method! (yet): " + myMethod);
         }
@@ -206,23 +225,19 @@ public class SinglePartRequestBody
         return props;
     }
 
-    private void setOutputProperty(Properties props, String value, String key)
+    private void setOutputProperty(final Properties props, final String value, final String key)
     {
         if ( value != null ) {
             props.setProperty(key, value);
         }
     }
 
-    private void setYesNoOutputProperty(Properties props, Boolean value, String key)
+    private void setYesNoOutputProperty(final Properties props, final Boolean value, final String key)
     {
         if ( value != null ) {
             props.setProperty(key, value ? "yes" : "no");
         }
     }
-
-    private Type myMethod;
-    private Sequence myChilds;
-    private SerializationParams mySerial = new SerializationParams();
 }
 
 
@@ -243,5 +258,5 @@ public class SinglePartRequestBody
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

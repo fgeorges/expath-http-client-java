@@ -12,6 +12,8 @@ package org.expath.httpclient.impl;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.expath.httpclient.ContentType;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
@@ -28,7 +30,12 @@ import org.expath.httpclient.model.TreeBuilder;
 public class BinaryResponseBody
         implements HttpResponseBody
 {
-    public BinaryResponseBody(Result result, byte[] value, ContentType type, HeaderSet headers)
+    private static final Log LOG = LogFactory.getLog(BinaryResponseBody.class);
+    
+    private final static String BODY_ELEM = "body";
+    private final static String MEDIA_TYPE_ATTR = "media-type";
+    
+    public BinaryResponseBody(final Result result, final byte[] value, final ContentType type, final HeaderSet headers)
             throws HttpClientException
     {
         myContentType = type;
@@ -43,35 +50,41 @@ public class BinaryResponseBody
     //    not be supported at all, or be implemented as a wrapper InputStream
     //    that is set earlier on the InputStream to decode base64 (for binary,
     //    text or whatever.)
-    public BinaryResponseBody(Result result, InputStream in, ContentType type, HeaderSet headers)
+    public BinaryResponseBody(final Result result, final InputStream in, final ContentType type, final HeaderSet headers)
             throws HttpClientException
     {
         myContentType = type;
         myHeaders = headers;
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[4096];
-            int read = 0;
+            final byte[] buf = new byte[4096];
+            int read = -1;
             while ( (read = in.read(buf)) > 0 ) {
                 out.write(buf, 0, read);
             }
-            byte[] bytes = out.toByteArray();
+            final byte[] bytes = out.toByteArray();
             result.add(bytes);
         }
-        catch ( IOException ex ) {
+        catch ( final IOException ex ) {
             throw new HttpClientException("error reading HTTP response", ex);
+        } finally {
+            try {
+                out.close();
+            } catch(final IOException ioe) {
+                LOG.warn(ioe.getMessage(), ioe);
+            }
         }
     }
 
     @Override
-    public void outputBody(TreeBuilder b)
+    public void outputBody(final TreeBuilder b)
             throws HttpClientException
     {
         if ( myHeaders != null ) {
             b.outputHeaders(myHeaders);
         }
-        b.startElem("body");
-        b.attribute("media-type", myContentType.getValue());
+        b.startElem(BODY_ELEM);
+        b.attribute(MEDIA_TYPE_ATTR, myContentType.getValue());
         // TODO: Support other attributes as well?
         b.startContent();
         b.endElem();
@@ -99,5 +112,5 @@ public class BinaryResponseBody
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

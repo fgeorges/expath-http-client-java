@@ -27,6 +27,11 @@ import org.expath.httpclient.model.Element;
  */
 public abstract class HttpRequestBody
 {
+    private final static String MEDIA_TYPE_ATTR = "media-type";
+    
+    private final Element myElem;
+    private final String myContentType;
+    
     public abstract void serialize(OutputStream out)
             throws HttpClientException;
 
@@ -35,11 +40,11 @@ public abstract class HttpRequestBody
 
     public abstract boolean isMultipart();
 
-    public HttpRequestBody(Element elem)
+    public HttpRequestBody(final Element elem)
             throws HttpClientException
     {
         myElem = elem;
-        myContentType = myElem.getAttribute("media-type");
+        myContentType = myElem.getAttribute(MEDIA_TYPE_ATTR);
         if ( myContentType == null ) {
             throw new HttpClientException("@media-type is not on the body or multipart element");
         }
@@ -54,9 +59,6 @@ public abstract class HttpRequestBody
     {
         return myElem;
     }
-
-    private Element myElem;
-    private String myContentType;
 }
 
 
@@ -77,5 +79,5 @@ public abstract class HttpRequestBody
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

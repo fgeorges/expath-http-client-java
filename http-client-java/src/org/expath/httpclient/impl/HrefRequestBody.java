@@ -17,6 +17,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.expath.httpclient.ContentType;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpRequestBody;
@@ -31,14 +34,21 @@ import org.expath.httpclient.model.Element;
 public class HrefRequestBody
         extends HttpRequestBody
 {
+    
+    private static final Log LOG = LogFactory.getLog(HrefRequestBody.class);
+        
+    private final static String SRC_ATTR = "src";
+    
+    private String myHref;
+    
     /**
      * TODO: Check there is no other attributes (only @src and @media-type)...
      */
-    public HrefRequestBody(Element elem)
+    public HrefRequestBody(final Element elem)
             throws HttpClientException
     {
         super(elem);
-        myHref = elem.getAttribute("src");
+        myHref = elem.getAttribute(SRC_ATTR);
     }
 
     @Override
@@ -48,41 +58,45 @@ public class HrefRequestBody
     }
 
     @Override
-    public void setHeaders(HeaderSet headers)
+    public void setHeaders(final HeaderSet headers)
             throws HttpClientException
     {
         // set the Content-Type header (if not set by the user)
-        if ( headers.getFirstHeader("Content-Type") == null ) {
-            headers.add("Content-Type", getContentType());
+        if ( headers.getFirstHeader(ContentType.CONTENT_TYPE_HEADER) == null ) {
+            headers.add(ContentType.CONTENT_TYPE_HEADER, getContentType());
         }
     }
 
     @Override
-    public void serialize(OutputStream out)
+    public void serialize(final OutputStream out)
             throws HttpClientException
     {
+        InputStream in = null;
         try {
-            String filename = new URI(myHref).getPath();
-            InputStream in = new FileInputStream(new File(filename));
-            byte[] buf = new byte[4096];
+            final String filename = new URI(myHref).getPath();
+            in = new FileInputStream(new File(filename));
+            final byte[] buf = new byte[4096];
             int l = -1;
-            while ( (l = in.read(buf)) != -1 ) {
+            while((l = in.read(buf)) > 0) {
                 out.write(buf, 0, l);
             }
-            in.close();
         }
-        catch ( URISyntaxException ex ) {
+        catch ( final URISyntaxException ex ) {
             throw new HttpClientException("Bad URI: " + myHref, ex);
         }
-        catch ( FileNotFoundException ex ) {
+        catch ( final FileNotFoundException ex ) {
             throw new HttpClientException("Error sending the file content", ex);
         }
-        catch ( IOException ex ) {
+        catch ( final IOException ex ) {
             throw new HttpClientException("Error sending the file content", ex);
+        } finally {
+            try {
+                in.close();
+            } catch(final IOException ioe) {
+                LOG.warn(ioe.getMessage(), ioe);
+            }
         }
     }
-
-    private String myHref;
 }
 
 
@@ -103,5 +117,5 @@ public class HrefRequestBody
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

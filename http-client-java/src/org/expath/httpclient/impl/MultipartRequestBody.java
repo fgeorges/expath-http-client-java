@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.http.Header;
+import org.expath.httpclient.ContentType;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpRequestBody;
@@ -29,7 +30,15 @@ import org.expath.httpclient.model.Sequence;
 public class MultipartRequestBody
         extends HttpRequestBody
 {
-    public MultipartRequestBody(Element elem, Sequence bodies)
+    private static final byte[] DASHES  = { 45, 45 }; // = "--"
+    private static final byte[] NEWLINE = { 13, 10 }; // = "\r\n"
+    private static final byte[] COLON   = { 58, 32 }; // = ": "
+    
+    private final String myBoundary;
+    private final byte[] myBoundaryBytes;
+    private final List<Body> myBodies;
+    
+    public MultipartRequestBody(final Element elem, final Sequence bodies)
             throws HttpClientException
     {
         super(elem);
@@ -51,12 +60,12 @@ public class MultipartRequestBody
     }
 
     @Override
-    public void setHeaders(HeaderSet headers)
+    public void setHeaders(final HeaderSet headers)
             throws HttpClientException
     {
         // set the Content-Type header (if not set by the user)
-        if ( headers.getFirstHeader("Content-Type") == null ) {
-            StringBuilder type = new StringBuilder(getContentType());
+        if ( headers.getFirstHeader(ContentType.CONTENT_TYPE_HEADER) == null ) {
+            final StringBuilder type = new StringBuilder(getContentType());
             type.append("; boundary=");
             type.append("\"");
             if ( myBoundary.contains("\"") ) {
@@ -66,7 +75,7 @@ public class MultipartRequestBody
                 type.append(myBoundary);
             }
             type.append("\"");
-            headers.add("Content-Type", type.toString());
+            headers.add(ContentType.CONTENT_TYPE_HEADER, type.toString());
         }
     }
 
@@ -76,7 +85,7 @@ public class MultipartRequestBody
             throws HttpClientException
     {
         try {
-            for ( Body body : myBodies ) {
+            for ( final Body body : myBodies ) {
                 // the boundary
                 out.write(DASHES);
                 out.write(myBoundaryBytes);
@@ -96,7 +105,7 @@ public class MultipartRequestBody
             out.write(DASHES);
             out.write(NEWLINE);
         }
-        catch ( IOException ex ) {
+        catch ( final IOException ex ) {
             throw new HttpClientException("IO error serializing multipart content", ex);
         }
     }
@@ -107,22 +116,22 @@ public class MultipartRequestBody
         return true;
     }
 
-    private void accumulateBodies(Element elem, Sequence bodies)
+    private void accumulateBodies(final Element elem, final Sequence bodies)
             throws HttpClientException
     {
         // check if there is any child element in no namespace
         if ( elem.hasNoNsChild() ) {
-            String msg = "There is an element in no namespace as http:multipart child.";
+            final String msg = "There is an element in no namespace as http:multipart child.";
             throw new HttpClientException(msg);
         }
         // iterate over child elements in http: namespace (ignore other qualified elements)
         HeaderSet headers = new HeaderSet();
-        for ( Element b : elem.httpNsChildren() ) {
+        for ( final Element b : elem.httpNsChildren() ) {
             if ( "header".equals(b.getLocalName()) ) {
-                String[] attr_names = { "name", "value" };
+                final String[] attr_names = { "name", "value" };
                 b.noOtherNCNameAttribute(attr_names);
-                String name  = b.getAttribute("name");
-                String value = b.getAttribute("value");
+                final String name  = b.getAttribute("name");
+                final String value = b.getAttribute("value");
                 headers.add(name, value);
             }
             else if ( "body".equals(b.getLocalName()) ) {
@@ -130,21 +139,21 @@ public class MultipartRequestBody
 //                // TODO: Check if empty element happens once and only once.
 //                Item s = b.iterateAxis(Axis.CHILD).moveNext() ? null : serial;
 //                HttpRequestBody req_body = BodyFactory.makeRequestBody(b, s);
-                HttpRequestBody req_body = BodyFactory.makeRequestBody(b, bodies);
+                final HttpRequestBody req_body = BodyFactory.makeRequestBody(b, bodies);
                 myBodies.add(new Body(headers, req_body));
                 headers = new HeaderSet();
             }
             else {
-                String name = b.getDisplayName();
+                final String name = b.getDisplayName();
                 throw new HttpClientException("Unknown http:multipart child: " + name);
             }
         }
     }
 
-    private void serializePartHeaders(OutputStream out, HeaderSet headers)
+    private void serializePartHeaders(final OutputStream out, final HeaderSet headers)
             throws IOException
     {
-        for ( Header h : headers ) {
+        for ( final Header h : headers ) {
             out.write(h.getName().getBytes("US-ASCII"));
             out.write(COLON);
             out.write(h.getValue().getBytes("US-ASCII"));
@@ -152,20 +161,22 @@ public class MultipartRequestBody
         }
     }
 
-    private String myBoundary;
-    private byte[] myBoundaryBytes;
-    private List<Body> myBodies;
-    private static final byte[] DASHES  = { 45, 45 }; // = "--"
-    private static final byte[] NEWLINE = { 13, 10 }; // = "\r\n"
-    private static final byte[] COLON   = { 58, 32 }; // = ": "
-
     private static class Body {
-        public Body(HeaderSet headers, HttpRequestBody body) {
+        private final HeaderSet myHeaders;
+        private final HttpRequestBody myBody;
+        
+        public Body(final HeaderSet headers, final HttpRequestBody body) {
             myBody = body;
             myHeaders = headers;
         }
-        public HeaderSet myHeaders;
-        public HttpRequestBody myBody;
+
+        public HeaderSet getMyHeaders() {
+            return myHeaders;
+        }
+
+        public HttpRequestBody getMyBody() {
+            return myBody;
+        }
     }
 }
 
@@ -187,5 +198,5 @@ public class MultipartRequestBody
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

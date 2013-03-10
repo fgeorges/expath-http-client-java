@@ -27,6 +27,9 @@ import org.expath.httpclient.model.Sequence;
  */
 public class RequestParser
 {
+    private HttpCredentials myCredentials = null;
+    private boolean mySendAuth = false;
+    
     public HttpCredentials getCredentials()
     {
         return myCredentials;
@@ -37,7 +40,7 @@ public class RequestParser
         return mySendAuth;
     }
 
-    public HttpRequest parse(Element request, Sequence bodies, String href)
+    public HttpRequest parse(final Element request, final Sequence bodies, final String href)
             throws HttpClientException
     {
         if ( ! "request".equals(request.getLocalName())
@@ -49,7 +52,7 @@ public class RequestParser
         String password = null;
         String auth_method = null;
 
-        HttpRequest req = new HttpRequestImpl();
+        final HttpRequest req = new HttpRequestImpl();
         req.setHref(href);
 
         // walk the attributes:
@@ -62,9 +65,9 @@ public class RequestParser
         //     send-authorization? = boolean
         //     override-media-type? = string
         //     follow-redirect? = boolean
-        for ( Attribute a : request.attributes() ) {
-            String local = a.getLocalName();
-            if ( !"".equals(a.getNamespaceUri()) ) {
+        for ( final Attribute a : request.attributes() ) {
+            final String local = a.getLocalName();
+            if ( !a.getNamespaceUri().isEmpty() ) {
                 // ignore namespace qualified attributes
             }
             else if ( "method".equals(local) ) {
@@ -116,12 +119,12 @@ public class RequestParser
 
         // walk the elements
         // TODO: Check element structure validity (header*, (multipart|body)?)
-        HeaderSet headers = new HeaderSet();
+        final HeaderSet headers = new HeaderSet();
         req.setHeaders(headers);
-        for ( Element child : request.children() ) {
-            String local = child.getLocalName();
-            String ns = child.getNamespaceUri();
-            if ( "".equals(ns) ) {
+        for ( final Element child : request.children() ) {
+            final String local = child.getLocalName();
+            final String ns = child.getNamespaceUri();
+            if ( ns.isEmpty() ) {
                 // elements in no namespace are an error
                 throw new HttpClientException("Element in no namespace: " + local);
             }
@@ -132,7 +135,7 @@ public class RequestParser
                 addHeader(headers, child);
             }
             else if ( "body".equals(local) || "multipart".equals(local) ) {
-                HttpRequestBody b = BodyFactory.makeRequestBody(child, bodies);
+                final HttpRequestBody b = BodyFactory.makeRequestBody(child, bodies);
                 req.setBody(b);
             }
             else {
@@ -143,7 +146,7 @@ public class RequestParser
         return req;
     }
 
-    private void setAuthentication(String user, String pwd, String method)
+    private void setAuthentication(final String user, final String pwd, final String method)
             throws HttpClientException
     {
         if ( user == null || pwd == null || method == null ) {
@@ -162,14 +165,14 @@ public class RequestParser
         }
     }
 
-    private void addHeader(HeaderSet headers, Element e)
+    private void addHeader(final HeaderSet headers, final Element e)
             throws HttpClientException
     {
         String name = null;
         String value = null;
-        for ( Attribute a : e.attributes() ) {
-            String local = a.getLocalName();
-            if ( !"".equals(a.getNamespaceUri()) ) {
+        for ( final Attribute a : e.attributes() ) {
+            final String local = a.getLocalName();
+            if ( !a.getNamespaceUri().isEmpty() ) {
                 // ignore namespace qualified attributes
             }
             else if ( "name".equals(local) ) {
@@ -189,9 +192,6 @@ public class RequestParser
         // actually add the header
         headers.add(name, value);
     }
-
-    private HttpCredentials myCredentials = null;
-    private boolean mySendAuth = false;
 }
 
 
@@ -212,5 +212,5 @@ public class RequestParser
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

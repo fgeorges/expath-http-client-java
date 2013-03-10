@@ -33,10 +33,24 @@ import org.expath.httpclient.model.Result;
 public class HttpRequestImpl
         implements HttpRequest
 {
-    public HttpResponse send(Result result, HttpConnection conn, HttpCredentials cred)
+    private static final Log LOG = LogFactory.getLog(HttpRequestImpl.class);
+    
+    private String myMethod;
+    private String myHref;
+    private String myHttpVer;
+    private String myOverrideType;
+    private boolean myStatusOnly;
+    private boolean myFollowRedirect = true;
+    private Integer myTimeout = null;
+    private HeaderSet myHeaders;
+    private HttpRequestBody myBody;
+    
+    
+    
+    public HttpResponse send(final Result result, final HttpConnection conn, final HttpCredentials cred)
             throws HttpClientException
     {
-        long start = System.currentTimeMillis();
+        final long start = System.currentTimeMillis();
         if ( myHeaders == null ) {
             myHeaders = new HeaderSet();
         }
@@ -50,41 +64,42 @@ public class HttpRequestImpl
         }
         conn.setFollowRedirect(myFollowRedirect);
         conn.connect(myBody, cred);
-        int status = conn.getResponseStatus();
-        String msg = conn.getResponseMessage();
+        final int status = conn.getResponseStatus();
+        final String msg = conn.getResponseMessage();
         HttpResponseBody body = null;
         if ( ! myStatusOnly ) {
-            ContentType type = getContentType(conn.getResponseHeaders());
+            final ContentType type = getContentType(conn.getResponseHeaders());
             if ( type == null ) {
                 // FIXME: We should probably rather fall back to octet-stream...
                 LOG.debug("There is no Content-Type, we assume there is no content");
-            }
-            else {
+            } else {
                 body = BodyFactory.makeResponseBody(result, type, conn);
             }
         }
-        long stop = System.currentTimeMillis();
-        long spent = stop - start;
-        HttpResponse resp = new HttpResponse(status, msg, conn.getResponseHeaders(), body, spent);
+        final long stop = System.currentTimeMillis();
+        final long spent = stop - start;
+        final HttpResponse resp = new HttpResponse(status, msg, conn.getResponseHeaders(), body, spent);
         result.add(resp);
         return resp;
     }
 
-    private ContentType getContentType(HeaderSet headers)
+    private ContentType getContentType(final HeaderSet headers)
             throws HttpClientException
     {
+        final ContentType contentType;
         if ( myOverrideType == null ) {
-            Header h = headers.getFirstHeader("Content-Type");
+            final Header h = headers.getFirstHeader(ContentType.CONTENT_TYPE_HEADER);
             if ( h == null ) {
-                return null;
+                contentType = null;
             }
             else {
-                return new ContentType(h);
+                contentType = new ContentType(h);
             }
         }
         else {
-            return new ContentType(myOverrideType, null);
+            contentType = new ContentType(myOverrideType, null);
         }
+        return contentType;
     }
 
     @Override
@@ -94,7 +109,7 @@ public class HttpRequestImpl
     }
 
     @Override
-    public void setMethod(String method)
+    public void setMethod(final String method)
     {
         myMethod = method;
     }
@@ -106,7 +121,7 @@ public class HttpRequestImpl
     }
 
     @Override
-    public void setHref(String href)
+    public void setHref(final String href)
     {
         myHref = href;
     }
@@ -118,7 +133,7 @@ public class HttpRequestImpl
     }
 
     @Override
-    public void setHttpVersion(String ver)
+    public void setHttpVersion(final String ver)
             throws HttpClientException
     {
         if ( HttpConstants.HTTP_1_0.equals(ver) ) {
@@ -133,19 +148,19 @@ public class HttpRequestImpl
     }
 
     @Override
-    public void setOverrideType(String type)
+    public void setOverrideType(final String type)
     {
         myOverrideType = type;
     }
 
     @Override
-    public void setHeaders(HeaderSet headers)
+    public void setHeaders(final HeaderSet headers)
     {
         myHeaders = headers;
     }
 
     @Override
-    public void setBody(HttpRequestBody body)
+    public void setBody(final HttpRequestBody body)
             throws HttpClientException
     {
         myBody = body;
@@ -153,33 +168,22 @@ public class HttpRequestImpl
     }
 
     @Override
-    public void setStatusOnly(boolean only)
+    public void setStatusOnly(final boolean only)
     {
         myStatusOnly = only;
     }
 
     @Override
-    public void setFollowRedirect(boolean follow)
+    public void setFollowRedirect(final boolean follow)
     {
         myFollowRedirect = follow;
     }
 
     @Override
-    public void setTimeout(Integer seconds)
+    public void setTimeout(final Integer seconds)
     {
         myTimeout = seconds;
     }
-
-    private String myMethod;
-    private String myHref;
-    private String myHttpVer;
-    private String myOverrideType;
-    private boolean myStatusOnly;
-    private boolean myFollowRedirect = true;
-    private Integer myTimeout = null;
-    private HeaderSet myHeaders;
-    private HttpRequestBody myBody;
-    private static final Log LOG = LogFactory.getLog(HttpRequestImpl.class);
 }
 
 
@@ -200,5 +204,5 @@ public class HttpRequestImpl
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */
