@@ -40,16 +40,16 @@ public class GContactTest
             throws SaxonApiException
     {
         // the style source document
-        Source style_src = new StreamSource(STYLE_FILE);
+        final Source style_src = new StreamSource(STYLE_FILE);
         // from the processor to the transformer...
-        Processor proc = new Processor(false);
-        XsltCompiler compiler = proc.newXsltCompiler();
-        XsltExecutable style = compiler.compile(style_src);
-        XsltTransformer trans = style.load();
+        final Processor proc = new Processor(false);
+        final XsltCompiler compiler = proc.newXsltCompiler();
+        final XsltExecutable style = compiler.compile(style_src);
+        final XsltTransformer trans = style.load();
         // the initial template
         trans.setInitialTemplate(new QName("main"));
         // the output (to stdout)
-        Serializer out = new Serializer();
+        final Serializer out = new Serializer();
         out.setOutputStream(System.out);
         trans.setDestination(out);
         // the authentication params
@@ -94,5 +94,5 @@ public class GContactTest
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */
