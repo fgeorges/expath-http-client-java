@@ -9,11 +9,7 @@
 
 package org.expath.httpclient.impl;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.expath.httpclient.ContentType;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
@@ -30,18 +26,9 @@ import org.expath.httpclient.model.TreeBuilder;
 public class BinaryResponseBody
         implements HttpResponseBody
 {
-    private static final Log LOG = LogFactory.getLog(BinaryResponseBody.class);
     
     private final static String BODY_ELEM = "body";
     private final static String MEDIA_TYPE_ATTR = "media-type";
-    
-    public BinaryResponseBody(final Result result, final byte[] value, final ContentType type, final HeaderSet headers)
-            throws HttpClientException
-    {
-        myContentType = type;
-        myHeaders = headers;
-        result.add(value);
-    }
 
     // TODO: Work only for binary response.  What if the response is encoded
     //   with base64?
@@ -55,25 +42,7 @@ public class BinaryResponseBody
     {
         myContentType = type;
         myHeaders = headers;
-        final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            final byte[] buf = new byte[4096];
-            int read = -1;
-            while ( (read = in.read(buf)) > 0 ) {
-                out.write(buf, 0, read);
-            }
-            final byte[] bytes = out.toByteArray();
-            result.add(bytes);
-        }
-        catch ( final IOException ex ) {
-            throw new HttpClientException("error reading HTTP response", ex);
-        } finally {
-            try {
-                out.close();
-            } catch(final IOException ioe) {
-                LOG.warn(ioe.getMessage(), ioe);
-            }
-        }
+        result.add(in);
     }
 
     @Override

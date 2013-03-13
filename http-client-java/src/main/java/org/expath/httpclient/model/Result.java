@@ -9,6 +9,8 @@
 
 package org.expath.httpclient.model;
 
+import java.io.InputStream;
+import java.io.Reader;
 import javax.xml.transform.Source;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpResponse;
@@ -34,15 +36,15 @@ import org.expath.httpclient.HttpResponse;
 public interface Result
 {
     /**
-     * Add an {@code xs:string} to the result sequence.
+     * Add an a string value to the result sequence.
      */
-    public void add(String string)
+    public void add(Reader reader)
             throws HttpClientException;
 
     /**
-     * Add an {@code xs:base64Binary} to the result sequence.
+     * Add raw binary to the result sequence.
      */
-    public void add(byte[] bytes)
+    public void add(InputStream is)
             throws HttpClientException;
 
     /**
@@ -81,5 +83,5 @@ public interface Result
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

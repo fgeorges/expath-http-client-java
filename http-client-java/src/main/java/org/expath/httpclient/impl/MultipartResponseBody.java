@@ -202,7 +202,7 @@ public class MultipartResponseBody
             }
                 
             case TEXT: {
-                final Reader in = parser.getReader();
+                final InputStream in = parser.getInputStream();
                 part = new TextResponseBody(result, in, type, headers);
                 break;
             }

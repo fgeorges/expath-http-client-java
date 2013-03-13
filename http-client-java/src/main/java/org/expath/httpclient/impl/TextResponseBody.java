@@ -9,8 +9,6 @@
 
 package org.expath.httpclient.impl;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -40,46 +38,18 @@ public class TextResponseBody
     public TextResponseBody(final Result result, final InputStream in, final ContentType type, final HeaderSet headers)
             throws HttpClientException
     {
-        // FIXME: ...
-        final String charset = "utf-8";
-        try {
-            final Reader reader = new InputStreamReader(in, charset);
-            init(result, reader, type, headers);
-        }
-        catch ( final UnsupportedEncodingException ex ) {
-            final String msg = "not supported charset reading HTTP response: " + charset;
-            throw new HttpClientException(msg, ex);
-        }
-    }
-
-    public TextResponseBody(final Result result, final Reader in, final ContentType type, final HeaderSet headers)
-            throws HttpClientException
-    {
-        init(result, in, type, headers);
-    }
-
-    private void init(final Result result, final Reader in, final ContentType type, final HeaderSet headers)
-            throws HttpClientException
-    {
         myContentType = type;
         myHeaders = headers;
-        // BufferedReader handles the ends of line (all \n, \r, and \r\n are
-        // transformed to \n)
-        BufferedReader buf_in = null;
+        
+        // FIXME: ...
+        final String charset = "UTF-8";
         try {
-            final StringBuilder builder = new StringBuilder();
-            buf_in = new BufferedReader(in);
-            
-            String buf = null;
-            while ( (buf = buf_in.readLine()) != null ) {
-                builder.append(buf);
-                builder.append('\n');
-            }
-            final String value = builder.toString();
-            result.add(value);
+            final Reader reader = new InputStreamReader(in, charset);
+            result.add(reader);
         }
-        catch ( final IOException ex ) {
-            throw new HttpClientException("error reading HTTP response", ex);
+        catch (final UnsupportedEncodingException ex ) {
+            final String msg = "not supported charset reading HTTP response: " + charset;
+            throw new HttpClientException(msg, ex);
         }
     }
 
