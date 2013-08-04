@@ -7,7 +7,7 @@
         <groupId>org.expath</groupId>
         <artifactId>expath-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
-        <relativePath>../../expath-pkg/expath-parent/pom.xml</relativePath> <!-- TODO fix later when expath-parent is moved -->
+        <relativePath>../../expath-pkg-java/expath-parent/pom.xml</relativePath> <!-- TODO fix later when expath-parent is moved -->
     </parent>
     
     <groupId>org.expath.http.client</groupId>
