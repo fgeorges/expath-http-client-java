@@ -9,6 +9,10 @@
 
 package org.expath.httpclient.saxon;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.transform.Source;
@@ -39,53 +43,114 @@ public class SaxonResult
     }
 
     @Override
-    public void add(String string)
+    public void add(final Reader reader)
             throws HttpClientException
     {
-        Item item = new StringValue(string);
-        myItems.add(item);
+        final StringBuilder builder = new StringBuilder();
+        final char[] buf = new char[4096];
+        int read = -1;
+        try
+        {
+            while((read = reader.read(buf)) > -1)
+            {
+                builder.append(buf, 0, read);
+            }
+            
+            final Item item = new StringValue(builder.toString());
+            myItems.add(item);
+        }
+        catch(final IOException ioe)
+        {
+            throw new HttpClientException(ioe.getMessage(), ioe);
+        }
+        finally
+        {
+            try
+            {
+                reader.close();
+            }
+            catch(final IOException ioe)
+            {
+                //TODO log!
+            }
+        }
     }
 
     @Override
-    public void add(byte[] bytes)
+    public void add(final InputStream is)
             throws HttpClientException
     {
-        Item item = new Base64BinaryValue(bytes);
-        myItems.add(item);
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try
+        {
+            byte buf[] = new byte[4096];
+            int read = -1;
+            while((read = is.read(buf)) > -1)
+            {
+                baos.write(buf);
+            }
+            
+            final Item item = new Base64BinaryValue(baos.toByteArray());
+            myItems.add(item);
+        }
+        catch(final IOException ioe)
+        {
+            throw new HttpClientException(ioe.getMessage(), ioe);
+        }
+        finally
+        {
+            try
+            {
+                baos.close();
+            }
+            catch(final IOException ioe)
+            {
+                //TODO log!
+            }
+            
+            try
+            {
+                is.close();
+            }
+            catch(final IOException ioe)
+            {
+                //TODO log!
+            }
+        }
     }
 
     @Override
-    public void add(Source src)
+    public void add(final Source src)
             throws HttpClientException
     {
         try {
-            Item doc = myCtxt.getConfiguration().buildDocument(src);
+            final Item doc = myCtxt.getConfiguration().buildDocument(src);
             myItems.add(doc);
         }
-        catch ( XPathException ex ) {
+        catch ( final XPathException ex ) {
             throw new HttpClientException("Error building the XML or HTML document", ex);
         }
     }
 
     @Override
-    public void add(HttpResponse response)
+    public void add(final HttpResponse response)
             throws HttpClientException
     {
-        SaxonTreeBuilder builder = new SaxonTreeBuilder(myCtxt);
+        final SaxonTreeBuilder builder = new SaxonTreeBuilder(myCtxt);
         response.outputResponseElement(builder);
-        Item elem = builder.getCurrentRoot();
+        final Item elem = builder.getCurrentRoot();
         myItems.add(0, elem);
     }
 
     public SequenceIterator newIterator()
             throws HttpClientException
     {
-        Item[] array = myItems.toArray(new Item[0]);
+        final Item[] array = myItems.toArray(new Item[0]);
         return new ArrayIterator(array);
     }
 
-    private List<Item> myItems;
-    private XPathContext myCtxt;
+    private final List<Item> myItems;
+    private final XPathContext myCtxt;
 }
 
 
