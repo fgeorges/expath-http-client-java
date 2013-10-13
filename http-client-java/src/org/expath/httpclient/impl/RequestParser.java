@@ -27,6 +27,36 @@ import org.expath.httpclient.model.Sequence;
  */
 public class RequestParser
 {
+    public RequestParser(Element request)
+            throws HttpClientException
+    {
+        String ns   = request.getNamespaceUri();
+        String name = request.getLocalName();
+        boolean ns_ok = true;
+        if ( HttpConstants.HTTP_NS_URI.equals(ns) ) {
+            myNs = HttpConstants.HTTP_NS_URI;
+            myOtherNs = HttpConstants.HTTP_CLIENT_NS_URI;
+        }
+        else if ( HttpConstants.HTTP_CLIENT_NS_URI.equals(ns) ) {
+            myNs = HttpConstants.HTTP_CLIENT_NS_URI;
+            myOtherNs = HttpConstants.HTTP_NS_URI;
+        }
+        else {
+            ns_ok = false;
+        }
+        if ( ! "request".equals(name) || ! ns_ok ) {
+            String clark = "{" + ns + "}" + name;
+            throw new HttpClientException("$request is not an element(http:request), but is " + clark);
+        }
+        myRequest = request;
+        myNs = ns;
+    }
+
+    public String getNamespaceURI()
+    {
+        return myNs;
+    }
+
     public HttpCredentials getCredentials()
     {
         return myCredentials;
@@ -37,14 +67,9 @@ public class RequestParser
         return mySendAuth;
     }
 
-    public HttpRequest parse(Element request, Sequence bodies, String href)
+    public HttpRequest parse(Sequence bodies, String href)
             throws HttpClientException
     {
-        if ( ! "request".equals(request.getLocalName())
-                  || ! HttpConstants.HTTP_CLIENT_NS_URI.equals(request.getNamespaceUri()) ) {
-            throw new HttpClientException("$request is not an element(http:request)");
-        }
-
         String username = null;
         String password = null;
         String auth_method = null;
@@ -55,6 +80,7 @@ public class RequestParser
         // walk the attributes:
         //     method = NCName
         //     href? = anyURI
+        //     http-version = string
         //     status-only? = boolean
         //     username? = string
         //     password? = string
@@ -62,7 +88,8 @@ public class RequestParser
         //     send-authorization? = boolean
         //     override-media-type? = string
         //     follow-redirect? = boolean
-        for ( Attribute a : request.attributes() ) {
+        //     timeout? = integer
+        for ( Attribute a : myRequest.attributes() ) {
             String local = a.getLocalName();
             if ( !"".equals(a.getNamespaceUri()) ) {
                 // ignore namespace qualified attributes
@@ -118,21 +145,25 @@ public class RequestParser
         // TODO: Check element structure validity (header*, (multipart|body)?)
         HeaderSet headers = new HeaderSet();
         req.setHeaders(headers);
-        for ( Element child : request.children() ) {
+        for ( Element child : myRequest.children() ) {
             String local = child.getLocalName();
             String ns = child.getNamespaceUri();
             if ( "".equals(ns) ) {
                 // elements in no namespace are an error
                 throw new HttpClientException("Element in no namespace: " + local);
             }
-            else if ( ! HttpConstants.HTTP_CLIENT_NS_URI.equals(ns) ) {
+            else if ( myOtherNs.equals(ns) ) {
+                String clark = "{" + ns + "}" + local;
+                throw new HttpClientException("http:request mixes elements in the new and legacy HTTP namespace: " + clark);
+            }
+            else if ( ! myNs.equals(ns) ) {
                 // ignore elements in other namespaces
             }
             else if ( "header".equals(local) ) {
                 addHeader(headers, child);
             }
             else if ( "body".equals(local) || "multipart".equals(local) ) {
-                HttpRequestBody b = BodyFactory.makeRequestBody(child, bodies);
+                HttpRequestBody b = BodyFactory.makeRequestBody(child, bodies, myNs);
                 req.setBody(b);
             }
             else {
@@ -190,7 +221,15 @@ public class RequestParser
         headers.add(name, value);
     }
 
+    /** The http:request element. */
+    private Element myRequest;
+    /** The namespace URI of the http:request element (either the new or the legacy URI). */
+    private String myNs;
+    /** The legacy namespace URI if myNs is the new one, or the other way around. */
+    private String myOtherNs;
+    /** User credentials in case of authentication (from @username, @password and @auth-method). */
     private HttpCredentials myCredentials = null;
+    /** The value of @send-authorization. */
     private boolean mySendAuth = false;
 }
 

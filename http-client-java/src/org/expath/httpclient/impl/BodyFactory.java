@@ -35,7 +35,7 @@ import org.expath.httpclient.model.Sequence;
 public class BodyFactory
 {
     // TODO: Take new methods into account (XHTML, BASE64 and HEX).
-    public static HttpRequestBody makeRequestBody(Element elem, Sequence bodies)
+    public static HttpRequestBody makeRequestBody(Element elem, Sequence bodies, String ns)
             throws HttpClientException
     {
         // method is got from @method if any...
@@ -46,7 +46,7 @@ public class BodyFactory
         }
         switch ( method ) {
             case MULTIPART:
-                return new MultipartRequestBody(elem, bodies);
+                return new MultipartRequestBody(elem, bodies, ns);
             case SRC:
                 return new HrefRequestBody(elem);
             case XML:

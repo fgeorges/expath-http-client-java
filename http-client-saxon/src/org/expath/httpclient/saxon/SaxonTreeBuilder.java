@@ -31,11 +31,12 @@ import org.expath.httpclient.model.TreeBuilder;
 public class SaxonTreeBuilder
         implements TreeBuilder
 {
-    public SaxonTreeBuilder(XPathContext ctxt)
+    public SaxonTreeBuilder(XPathContext ctxt, String ns)
             throws HttpClientException
     {
         myBuilder = ctxt.getController().makeBuilder();
         myBuilder.open();
+        myNs = ns;
     }
 
     /**
@@ -72,8 +73,7 @@ public class SaxonTreeBuilder
             throws HttpClientException
     {
         final String prefix = HttpConstants.HTTP_CLIENT_NS_PREFIX;
-        final String uri    = HttpConstants.HTTP_CLIENT_NS_URI;
-        NodeName name = new FingerprintedQName(prefix, uri, localname);
+        NodeName name = new FingerprintedQName(prefix, myNs, localname);
         try {
             myBuilder.startElement(name, Untyped.getInstance(), 0, 0);
         }
@@ -122,6 +122,8 @@ public class SaxonTreeBuilder
     }
 
     private Builder myBuilder;
+    /** The namespace used for the elements. */
+    private String myNs;
 }
 
 

@@ -29,7 +29,7 @@ import org.expath.httpclient.model.Sequence;
 public class MultipartRequestBody
         extends HttpRequestBody
 {
-    public MultipartRequestBody(Element elem, Sequence bodies)
+    public MultipartRequestBody(Element elem, Sequence bodies, String ns)
             throws HttpClientException
     {
         super(elem);
@@ -44,7 +44,7 @@ public class MultipartRequestBody
         elem.noOtherNCNameAttribute(attr_names);
         // handle http:header & http:body childs
         myBodies = new ArrayList<Body>();
-        accumulateBodies(elem, bodies);
+        accumulateBodies(elem, bodies, ns);
         if ( myBodies.isEmpty() ) {
             throw new HttpClientException("http:multipart does not contain any http:body");
         }
@@ -107,17 +107,17 @@ public class MultipartRequestBody
         return true;
     }
 
-    private void accumulateBodies(Element elem, Sequence bodies)
+    private void accumulateBodies(Element elem, Sequence bodies, String ns)
             throws HttpClientException
     {
         // check if there is any child element in no namespace
         if ( elem.hasNoNsChild() ) {
-            String msg = "There is an element in no namespace as http:multipart child.";
+            String msg = "A child element of http:multipart is in no namespace.";
             throw new HttpClientException(msg);
         }
         // iterate over child elements in http: namespace (ignore other qualified elements)
         HeaderSet headers = new HeaderSet();
-        for ( Element b : elem.httpNsChildren() ) {
+        for ( Element b : elem.children(ns) ) {
             if ( "header".equals(b.getLocalName()) ) {
                 String[] attr_names = { "name", "value" };
                 b.noOtherNCNameAttribute(attr_names);
@@ -130,7 +130,7 @@ public class MultipartRequestBody
 //                // TODO: Check if empty element happens once and only once.
 //                Item s = b.iterateAxis(Axis.CHILD).moveNext() ? null : serial;
 //                HttpRequestBody req_body = BodyFactory.makeRequestBody(b, s);
-                HttpRequestBody req_body = BodyFactory.makeRequestBody(b, bodies);
+                HttpRequestBody req_body = BodyFactory.makeRequestBody(b, bodies, ns);
                 myBodies.add(new Body(headers, req_body));
                 headers = new HeaderSet();
             }

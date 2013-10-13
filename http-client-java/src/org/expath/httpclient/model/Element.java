@@ -74,9 +74,9 @@ public interface Element
             throws HttpClientException;
 
     /**
-     * Iterate through the children elements in the HTTP Client namespace.
+     * Iterate through the children elements in a specific namespace.
      */
-    public Iterable<Element> httpNsChildren()
+    public Iterable<Element> children(String ns)
             throws HttpClientException;
 
     /**

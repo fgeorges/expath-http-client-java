@@ -106,8 +106,8 @@ public class HttpClient
     {
         Sequence b = new SaxonSequence(bodies, ctxt);
         Element r = new SaxonElement(request, ctxt);
-        RequestParser parser = new RequestParser();
-        HttpRequest req = parser.parse(r, b, href);
+        RequestParser parser = new RequestParser(r);
+        HttpRequest req = parser.parse(b, href);
         // override anyway it href exists
         if ( href != null && ! "".equals(href) ) {
             req.setHref(href);
@@ -131,7 +131,7 @@ public class HttpClient
     private SaxonResult sendOnce(URI uri, HttpRequest request, RequestParser parser, XPathContext ctxt)
             throws HttpClientException
     {
-        SaxonResult result = new SaxonResult(ctxt);
+        SaxonResult result = new SaxonResult(ctxt, parser.getNamespaceURI());
         HttpConnection conn = new ApacheHttpConnection(uri);
         try {
             if ( parser.getSendAuth() ) {
@@ -143,7 +143,7 @@ public class HttpClient
                     conn.disconnect();
                     conn = new ApacheHttpConnection(uri);
                     // create a new result, and throw the old one away
-                    result = new SaxonResult(ctxt);
+                    result = new SaxonResult(ctxt, parser.getNamespaceURI());
                     request.send(result, conn, parser.getCredentials());
                 }
             }

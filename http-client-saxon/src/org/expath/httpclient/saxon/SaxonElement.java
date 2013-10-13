@@ -121,8 +121,11 @@ public class SaxonElement
         NodeInfo attr;
         while ( (attr = (NodeInfo) it.next()) != null ) {
             String attr_name = attr.getDisplayName();
-            if ( HttpConstants.HTTP_CLIENT_NS_URI.equals(attr.getURI()) ) {
-                throw new HttpClientException("@" + attr_name + " not allowed on " + elem_name);
+            if ( HttpConstants.HTTP_NS_URI.equals(attr.getURI()) ) {
+                throw new HttpClientException("@http:" + attr_name + " not allowed on " + elem_name);
+            }
+            else if ( HttpConstants.HTTP_CLIENT_NS_URI.equals(attr.getURI()) ) {
+                throw new HttpClientException("@http:" + attr_name + " not allowed on " + elem_name);
             }
             else if ( ! "".equals(attr.getURI()) ) {
                 // ignore other-namespace-attributes
@@ -150,12 +153,11 @@ public class SaxonElement
     }
 
     @Override
-    public Iterable<Element> httpNsChildren()
+    public Iterable<Element> children(String ns)
             throws HttpClientException
     {
-        String http_ns = HttpConstants.HTTP_CLIENT_NS_URI;
         NamePool pool = myNode.getNamePool();
-        NodeTest pred = new NamespaceTest(pool, Type.ELEMENT, http_ns);
+        NodeTest pred = new NamespaceTest(pool, Type.ELEMENT, ns);
         AxisIterator it = myNode.iterateAxis(Axis.CHILD, pred);
         return new ElemIterable(it);
     }

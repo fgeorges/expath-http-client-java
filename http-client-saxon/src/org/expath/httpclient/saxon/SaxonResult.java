@@ -32,10 +32,11 @@ import org.expath.httpclient.model.Result;
 public class SaxonResult
         implements Result
 {
-    public SaxonResult(XPathContext ctxt)
+    public SaxonResult(XPathContext ctxt, String ns)
     {
         myItems = new ArrayList<Item>();
         myCtxt = ctxt;
+        myNs = ns;
     }
 
     @Override
@@ -71,7 +72,7 @@ public class SaxonResult
     public void add(HttpResponse response)
             throws HttpClientException
     {
-        SaxonTreeBuilder builder = new SaxonTreeBuilder(myCtxt);
+        SaxonTreeBuilder builder = new SaxonTreeBuilder(myCtxt, myNs);
         response.outputResponseElement(builder);
         Item elem = builder.getCurrentRoot();
         myItems.add(0, elem);
@@ -86,6 +87,8 @@ public class SaxonResult
 
     private List<Item> myItems;
     private XPathContext myCtxt;
+    /** The namespace used for the elements. */
+    private String myNs;
 }
 
 
