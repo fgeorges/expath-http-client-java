@@ -55,12 +55,11 @@ public class SaxonSequence
         Item item;
         try {
             item = myIt == null ? null : myIt.next();
+            return new SaxonSequence(item.iterate(), myCtxt);
         }
         catch ( XPathException ex ) {
             throw new HttpClientException("Error getting the next item in the sequence", ex);
         }
-        SequenceIterator it = SingletonIterator.makeIterator(item);
-        return new SaxonSequence(it, myCtxt);
     }
 
     @Override

@@ -13,7 +13,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.om.NodeInfo;
-import net.sf.saxon.om.SequenceIterator;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.trans.XPathException;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpConnection;
@@ -22,7 +22,6 @@ import org.expath.httpclient.HttpResponse;
 import org.expath.httpclient.impl.ApacheHttpConnection;
 import org.expath.httpclient.impl.RequestParser;
 import org.expath.httpclient.model.Element;
-import org.expath.httpclient.model.Sequence;
 import org.expath.httpclient.saxon.SaxonElement;
 import org.expath.httpclient.saxon.SaxonResult;
 import org.expath.httpclient.saxon.SaxonSequence;
@@ -43,7 +42,7 @@ public class HttpClient
      * http:send-request($request as element(http:request)?) as item()+
      * </pre>
      */
-    public static SequenceIterator sendRequest(XPathContext ctxt, NodeInfo request)
+    public static Sequence sendRequest(XPathContext ctxt, NodeInfo request)
             throws XPathException
     {
         return sendRequest(ctxt, request, null, null);
@@ -57,9 +56,9 @@ public class HttpClient
      *                   $href as xs:string?) as item()+
      * </pre>
      */
-    public static SequenceIterator sendRequest(XPathContext ctxt,
-                                               NodeInfo request,
-                                               String href)
+    public static Sequence sendRequest(XPathContext ctxt,
+                                       NodeInfo request,
+                                       String href)
             throws XPathException
     {
         return sendRequest(ctxt, request, href, null);
@@ -74,10 +73,10 @@ public class HttpClient
      *                   $bodies as item()*) as item()+
      * </pre>
      */
-    public static SequenceIterator sendRequest(XPathContext ctxt,
-                                               NodeInfo request,
-                                               String href,
-                                               SequenceIterator bodies)
+    public static Sequence sendRequest(XPathContext ctxt,
+                                       NodeInfo request,
+                                       String href,
+                                       Sequence bodies)
             throws XPathException
     {
         HttpClient client = new HttpClient();
@@ -97,14 +96,14 @@ public class HttpClient
     // response content if the user does: http:send-request(...)[1],
     // that is, if he/she does not actually access the content).  See
     // if we can use that...
-    private SequenceIterator doSendRequest(XPathContext ctxt,
-                                           NodeInfo request,
-                                           String href,
-                                           SequenceIterator bodies)
+    private Sequence doSendRequest(XPathContext ctxt,
+                                   NodeInfo request,
+                                   String href,
+                                   Sequence bodies)
             throws HttpClientException
                  , XPathException
     {
-        Sequence b = new SaxonSequence(bodies, ctxt);
+        SaxonSequence b = new SaxonSequence(bodies.iterate(), ctxt);
         Element r = new SaxonElement(request, ctxt);
         RequestParser parser = new RequestParser(r);
         HttpRequest req = parser.parse(b, href);
@@ -115,7 +114,7 @@ public class HttpClient
         try {
             URI uri = new URI(req.getHref());
             SaxonResult result = sendOnce(uri, req, parser, ctxt);
-            return result.newIterator();
+            return result.asSequence();
         }
         catch ( URISyntaxException ex ) {
             throw new HttpClientException("Href is not valid: " + req.getHref(), ex);

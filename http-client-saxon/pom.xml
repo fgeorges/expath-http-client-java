@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.expath.httpclient</groupId>
   <artifactId>expath-httpclient-saxon</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <parent>
     <groupId>org.sonatype.oss</groupId>
@@ -42,8 +42,8 @@
     <dependency>
       <groupId>net.sf.saxon</groupId>
       <artifactId>Saxon-HE</artifactId>
-      <!--<version>9.5.1-2</version>-->
-      <version>9.4.0.7</version>
+      <version>9.5.1-2</version>
+      <!--<version>9.4.0.7</version>-->
     </dependency>
     <dependency>
       <groupId>junit</groupId>
