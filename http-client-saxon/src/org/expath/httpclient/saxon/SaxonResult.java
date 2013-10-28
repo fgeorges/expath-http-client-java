@@ -14,10 +14,12 @@ import java.util.List;
 import javax.xml.transform.Source;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.om.Item;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.tree.iter.ArrayIterator;
 import net.sf.saxon.value.Base64BinaryValue;
+import net.sf.saxon.value.SequenceExtent;
 import net.sf.saxon.value.StringValue;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpResponse;
@@ -83,6 +85,13 @@ public class SaxonResult
     {
         Item[] array = myItems.toArray(new Item[0]);
         return new ArrayIterator(array);
+    }
+
+    public Sequence asSequence()
+            throws HttpClientException
+    {
+        Item[] array = myItems.toArray(new Item[0]);
+        return new SequenceExtent<Item>(array);
     }
 
     private List<Item> myItems;
