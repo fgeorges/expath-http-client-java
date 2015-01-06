@@ -1,7 +1,7 @@
 <package xmlns="http://expath.org/ns/pkg"
          name="http://expath.org/lib/http-client"
          abbrev="expath-http-client-saxon"
-         version="0.11.0dev"
+         version="0.11.0"
          spec="1.0">
 
    <title>EXPath HTTP Client for Saxon</title>
