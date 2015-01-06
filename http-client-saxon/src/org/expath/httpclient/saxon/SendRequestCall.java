@@ -13,6 +13,7 @@ import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.ExtensionFunctionCall;
 import net.sf.saxon.om.Item;
 import net.sf.saxon.om.NodeInfo;
+import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.StringValue;
@@ -28,12 +29,12 @@ public class SendRequestCall
         extends ExtensionFunctionCall
 {
     @Override
-    public SequenceIterator call(SequenceIterator[] params, XPathContext ctxt)
+    public Sequence call(XPathContext ctxt, Sequence[] params)
             throws XPathException
     {
-        NodeInfo         request = null;
-        String           href    = null;
-        SequenceIterator bodies  = null;
+        NodeInfo request = null;
+        String   href    = null;
+        Sequence bodies  = null;
         switch ( params.length ) {
             case 3:
                 bodies = params[2];
@@ -45,13 +46,15 @@ public class SendRequestCall
             default:
                 throw new XPathException("Incorrect number of params: " + params.length);
         }
-        return HttpClient.sendRequest(ctxt, request, href, bodies);
+        SequenceIterator iter = bodies == null ? null : bodies.iterate();
+        SaxonResult result = HttpClient.sendRequest(ctxt, request, href, iter);
+        return result.newSequence();
     }
 
-    private NodeInfo getRequest(SequenceIterator param)
+    private NodeInfo getRequest(Sequence param)
             throws XPathException
     {
-        Item item = param.next();
+        Item item = param.head();
         if ( item == null ) {
             throw new XPathException("The request param is an empty sequence");
         }
@@ -61,10 +64,10 @@ public class SendRequestCall
         return (NodeInfo) item;
     }
 
-    private String getHref(SequenceIterator param)
+    private String getHref(Sequence param)
             throws XPathException
     {
-        Item item = param.next();
+        Item item = param.head();
         if ( item == null ) {
             return null;
         }

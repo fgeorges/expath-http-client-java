@@ -43,7 +43,7 @@ public class HttpClient
      * http:send-request($request as element(http:request)?) as item()+
      * </pre>
      */
-    public static SequenceIterator sendRequest(XPathContext ctxt, NodeInfo request)
+    public static SaxonResult sendRequest(XPathContext ctxt, NodeInfo request)
             throws XPathException
     {
         return sendRequest(ctxt, request, null, null);
@@ -57,7 +57,7 @@ public class HttpClient
      *                   $href as xs:string?) as item()+
      * </pre>
      */
-    public static SequenceIterator sendRequest(XPathContext ctxt,
+    public static SaxonResult sendRequest(XPathContext ctxt,
                                                NodeInfo request,
                                                String href)
             throws XPathException
@@ -74,7 +74,7 @@ public class HttpClient
      *                   $bodies as item()*) as item()+
      * </pre>
      */
-    public static SequenceIterator sendRequest(XPathContext ctxt,
+    public static SaxonResult sendRequest(XPathContext ctxt,
                                                NodeInfo request,
                                                String href,
                                                SequenceIterator bodies)
@@ -97,10 +97,10 @@ public class HttpClient
     // response content if the user does: http:send-request(...)[1],
     // that is, if he/she does not actually access the content).  See
     // if we can use that...
-    private SequenceIterator doSendRequest(XPathContext ctxt,
-                                           NodeInfo request,
-                                           String href,
-                                           SequenceIterator bodies)
+    private SaxonResult doSendRequest(XPathContext ctxt,
+                                      NodeInfo request,
+                                      String href,
+                                      SequenceIterator bodies)
             throws HttpClientException
                  , XPathException
     {
@@ -114,8 +114,7 @@ public class HttpClient
         }
         try {
             URI uri = new URI(req.getHref());
-            SaxonResult result = sendOnce(uri, req, parser, ctxt);
-            return result.newIterator();
+            return sendOnce(uri, req, parser, ctxt);
         }
         catch ( URISyntaxException ex ) {
             throw new HttpClientException("Href is not valid: " + req.getHref(), ex);
