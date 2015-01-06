@@ -24,9 +24,10 @@ import net.sf.saxon.tree.iter.AxisIterator;
 import net.sf.saxon.type.Type;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpConstants;
-import org.expath.httpclient.model.Attribute;
-import org.expath.httpclient.model.Element;
-import org.expath.httpclient.model.Sequence;
+import org.expath.model.Attribute;
+import org.expath.model.Element;
+import org.expath.model.ModelException;
+import org.expath.model.Sequence;
 
 /**
  * Saxon implementation of {@link Element}, relying on {@link NodeInfo}.
@@ -103,7 +104,7 @@ public class SaxonElement
 
     @Override
     public void noOtherNCNameAttribute(String[] names)
-            throws HttpClientException
+            throws ModelException
     {
         if ( names == null ) {
             throw new NullPointerException("the names array is null");
@@ -119,16 +120,16 @@ public class SaxonElement
         while ( (attr = (NodeInfo) it.next()) != null ) {
             String attr_name = attr.getDisplayName();
             if ( HttpConstants.HTTP_NS_URI.equals(attr.getURI()) ) {
-                throw new HttpClientException("@http:" + attr_name + " not allowed on " + elem_name);
+                throw new ModelException("@http:" + attr_name + " not allowed on " + elem_name);
             }
             else if ( HttpConstants.HTTP_CLIENT_NS_URI.equals(attr.getURI()) ) {
-                throw new HttpClientException("@http:" + attr_name + " not allowed on " + elem_name);
+                throw new ModelException("@http:" + attr_name + " not allowed on " + elem_name);
             }
             else if ( ! "".equals(attr.getURI()) ) {
                 // ignore other-namespace-attributes
             }
             else if ( Arrays.binarySearch(sorted, attr.getLocalPart()) < 0 ) {
-                throw new HttpClientException("@" + attr_name + " not allowed on " + elem_name);
+                throw new ModelException("@" + attr_name + " not allowed on " + elem_name);
             }
         }
     }

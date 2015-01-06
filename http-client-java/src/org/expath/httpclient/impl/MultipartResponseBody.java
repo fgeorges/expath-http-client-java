@@ -28,6 +28,7 @@ import org.expath.httpclient.HttpConnection;
 import org.expath.httpclient.HttpResponseBody;
 import org.expath.httpclient.model.Result;
 import org.expath.httpclient.model.TreeBuilder;
+import org.expath.model.ModelException;
 
 /**
  * TODO<doc>: ...
@@ -63,14 +64,19 @@ public class MultipartResponseBody
     public void outputBody(TreeBuilder b)
             throws HttpClientException
     {
-        b.startElem("multipart");
-        b.attribute("media-type", myContentType.getValue());
-        b.attribute("boundary", myBoundary);
-        b.startContent();
-        for ( HttpResponseBody part : myParts ) {
-            part.outputBody(b);
+        try {
+            b.startElem("multipart");
+            b.attribute("media-type", myContentType.getValue());
+            b.attribute("boundary", myBoundary);
+            b.startContent();
+            for ( HttpResponseBody part : myParts ) {
+                part.outputBody(b);
+            }
+            b.endElem();
         }
-        b.endElem();
+        catch ( ModelException ex ) {
+            throw new HttpClientException("Error building the body", ex);
+        }
     }
 
     private void analyzeParts(Result result, InputStream in, String type)

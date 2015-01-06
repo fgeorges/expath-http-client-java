@@ -21,6 +21,7 @@ import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpResponseBody;
 import org.expath.httpclient.model.Result;
 import org.expath.httpclient.model.TreeBuilder;
+import org.expath.model.ModelException;
 
 /**
  * TODO<doc>: ...
@@ -82,11 +83,16 @@ public class TextResponseBody
         if ( myHeaders != null ) {
             b.outputHeaders(myHeaders);
         }
-        b.startElem("body");
-        b.attribute("media-type", myContentType.getValue());
-        // TODO: Support other attributes as well?
-        b.startContent();
-        b.endElem();
+        try {
+            b.startElem("body");
+            b.attribute("media-type", myContentType.getValue());
+            // TODO: Support other attributes as well?
+            b.startContent();
+            b.endElem();
+        }
+        catch ( ModelException ex ) {
+            throw new HttpClientException("Error building the body", ex);
+        }
     }
 
     private ContentType myContentType;

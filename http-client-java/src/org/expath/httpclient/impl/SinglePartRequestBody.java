@@ -18,8 +18,9 @@ import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpRequestBody;
 import org.expath.httpclient.SerializationParams;
 import org.expath.httpclient.impl.BodyFactory.Type;
-import org.expath.httpclient.model.Element;
-import org.expath.httpclient.model.Sequence;
+import org.expath.model.Element;
+import org.expath.model.ModelException;
+import org.expath.model.Sequence;
 
 /**
  * TODO<doc>: ...
@@ -84,17 +85,27 @@ public class SinglePartRequestBody
             }
         }
         // check for not allowed attributes
-        elem.noOtherNCNameAttribute(attr_names);
+        try {
+            elem.noOtherNCNameAttribute(attr_names);
+        }
+        catch ( ModelException ex ) {
+            throw new HttpClientException("Invalid attributes", ex);
+        }
         // handle childs
         myChilds = getBodyElement().getContent();
         // If there is no content in the http:body element, take the next item
         // in the $bodies parameter.
-        if ( myChilds.isEmpty() ) {
-            Sequence body = bodies.next();
-            if ( body == null ) {
-                throw new HttpClientException("There is not enough items within $bodies");
+        try {
+            if ( myChilds.isEmpty() ) {
+                Sequence body = bodies.next();
+                if ( body == null ) {
+                    throw new HttpClientException("There is not enough items within $bodies");
+                }
+                myChilds = body;
             }
-            myChilds = body;
+        }
+        catch ( ModelException ex ) {
+            throw new HttpClientException("Technical error walking through the http:body content", ex);
         }
     }
 
@@ -157,7 +168,12 @@ public class SinglePartRequestBody
         else if ( myMethod == Type.BINARY || myMethod == Type.BASE64 ) {
             out = new Base64.OutputStream(out, Base64.DECODE);
         }
-        myChilds.serialize(out, options);
+        try {
+            myChilds.serialize(out, options);
+        }
+        catch ( ModelException ex ) {
+            throw new HttpClientException("Error serializing the result", ex);
+        }
     }
 
     @Override

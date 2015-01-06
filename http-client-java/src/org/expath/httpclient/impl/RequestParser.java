@@ -15,9 +15,10 @@ import org.expath.httpclient.HttpConstants;
 import org.expath.httpclient.HttpCredentials;
 import org.expath.httpclient.HttpRequest;
 import org.expath.httpclient.HttpRequestBody;
-import org.expath.httpclient.model.Attribute;
-import org.expath.httpclient.model.Element;
-import org.expath.httpclient.model.Sequence;
+import org.expath.model.Attribute;
+import org.expath.model.Element;
+import org.expath.model.ModelException;
+import org.expath.model.Sequence;
 
 /**
  * Parse the http:request element into a {@link HttpRequest} object.
@@ -104,7 +105,7 @@ public class RequestParser
                 req.setHttpVersion(a.getValue().trim());
             }
             else if ( "status-only".equals(local) ) {
-                req.setStatusOnly(a.getBoolean());
+                req.setStatusOnly(toBoolean(a));
             }
             else if ( "username".equals(local) ) {
                 username = a.getValue();
@@ -116,16 +117,16 @@ public class RequestParser
                 auth_method = a.getValue();
             }
             else if ( "send-authorization".equals(local) ) {
-                mySendAuth = a.getBoolean();
+                mySendAuth = toBoolean(a);
             }
             else if ( "override-media-type".equals(local) ) {
                 req.setOverrideType(a.getValue());
             }
             else if ( "follow-redirect".equals(local) ) {
-                req.setFollowRedirect(a.getBoolean());
+                req.setFollowRedirect(toBoolean(a));
             }
             else if ( "timeout".equals(local) ) {
-                req.setTimeout(a.getInteger());
+                req.setTimeout(toInteger(a));
             }
             else {
                 throw new HttpClientException("Unknown attribute http:request/@" + local);
@@ -219,6 +220,42 @@ public class RequestParser
         }
         // actually add the header
         headers.add(name, value);
+    }
+
+    /**
+     * Helper function to handle the exception.
+     * 
+     * @return The attribute value as a boolean.
+     * 
+     * @throws HttpClientException If the attribute value is not a proper boolean.
+     */
+    private boolean toBoolean(Attribute a)
+            throws HttpClientException
+    {
+        try {
+            return a.getBoolean();
+        }
+        catch ( ModelException ex ) {
+            throw new HttpClientException("Error parsing the attribute as a boolean", ex);
+        }
+    }
+
+    /**
+     * Helper function to handle the exception.
+     * 
+     * @return The attribute value as a integer.
+     * 
+     * @throws HttpClientException If the attribute value is not a proper integer.
+     */
+    private int toInteger(Attribute a)
+            throws HttpClientException
+    {
+        try {
+            return a.getInteger();
+        }
+        catch ( ModelException ex ) {
+            throw new HttpClientException("Error parsing the attribute as an integer", ex);
+        }
     }
 
     /** The http:request element. */

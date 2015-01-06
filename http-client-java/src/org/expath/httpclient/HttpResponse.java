@@ -10,6 +10,7 @@
 package org.expath.httpclient;
 
 import org.expath.httpclient.model.TreeBuilder;
+import org.expath.model.ModelException;
 
 /**
  * TODO<doc>: ...
@@ -48,18 +49,23 @@ public class HttpResponse
     public void outputResponseElement(TreeBuilder b)
             throws HttpClientException
     {
-        b.startElem("response");
-        b.attribute("status", Integer.toString(myStatus));
-        b.attribute("message", myMessage);
-        b.attribute("spent-millis", Long.toString(myTime));
-        b.startContent();
-        b.outputHeaders(myHeaders);
-        if ( myBody != null ) {
-            // "recurse" on bodies...
-            myBody.outputBody(b);
+        try {
+            b.startElem("response");
+            b.attribute("status", Integer.toString(myStatus));
+            b.attribute("message", myMessage);
+            b.attribute("spent-millis", Long.toString(myTime));
+            b.startContent();
+            b.outputHeaders(myHeaders);
+            if ( myBody != null ) {
+                // "recurse" on bodies...
+                myBody.outputBody(b);
+            }
+            // end the response element
+            b.endElem();
         }
-        // end the response element
-        b.endElem();
+        catch ( ModelException ex ) {
+            throw new HttpClientException("Error building the response", ex);
+        }
     }
 
     private int myStatus;

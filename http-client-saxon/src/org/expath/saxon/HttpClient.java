@@ -21,11 +21,11 @@ import org.expath.httpclient.HttpRequest;
 import org.expath.httpclient.HttpResponse;
 import org.expath.httpclient.impl.ApacheHttpConnection;
 import org.expath.httpclient.impl.RequestParser;
-import org.expath.httpclient.model.Element;
-import org.expath.httpclient.model.Sequence;
 import org.expath.httpclient.saxon.SaxonElement;
 import org.expath.httpclient.saxon.SaxonResult;
 import org.expath.httpclient.saxon.SaxonSequence;
+import org.expath.model.Element;
+import org.expath.model.Sequence;
 
 
 /**

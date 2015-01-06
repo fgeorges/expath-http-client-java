@@ -20,7 +20,7 @@ import java.net.URISyntaxException;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpRequestBody;
-import org.expath.httpclient.model.Element;
+import org.expath.model.Element;
 
 /**
  * TODO<doc>: ...

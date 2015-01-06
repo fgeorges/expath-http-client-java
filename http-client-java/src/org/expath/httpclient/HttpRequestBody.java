@@ -10,7 +10,7 @@
 package org.expath.httpclient;
 
 import java.io.OutputStream;
-import org.expath.httpclient.model.Element;
+import org.expath.model.Element;
 
 /**
  * The body of an HTTP request.

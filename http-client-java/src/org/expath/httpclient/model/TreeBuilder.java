@@ -19,20 +19,9 @@ import org.expath.httpclient.HttpClientException;
  * @date   2011-03-10
  */
 public interface TreeBuilder
+        extends org.expath.model.TreeBuilder
 {
     public void outputHeaders(HeaderSet headers)
-            throws HttpClientException;
-
-    public void startElem(String localname)
-            throws HttpClientException;
-
-    public void attribute(String localname, CharSequence value)
-            throws HttpClientException;
-
-    public void startContent()
-            throws HttpClientException;
-
-    public void endElem()
             throws HttpClientException;
 }
 

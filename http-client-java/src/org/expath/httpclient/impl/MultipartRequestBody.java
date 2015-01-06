@@ -17,8 +17,9 @@ import org.apache.http.Header;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpRequestBody;
-import org.expath.httpclient.model.Element;
-import org.expath.httpclient.model.Sequence;
+import org.expath.model.Element;
+import org.expath.model.ModelException;
+import org.expath.model.Sequence;
 
 /**
  * TODO<doc>: ...
@@ -40,8 +41,13 @@ public class MultipartRequestBody
         }
         myBoundaryBytes = myBoundary.getBytes();
         // check for not allowed attributes
-        String[] attr_names = { "media-type", "boundary" };
-        elem.noOtherNCNameAttribute(attr_names);
+        try {
+            String[] attr_names = { "media-type", "boundary" };
+            elem.noOtherNCNameAttribute(attr_names);
+        }
+        catch ( ModelException ex ) {
+            throw new HttpClientException("Invalid attributes", ex);
+        }
         // handle http:header & http:body childs
         myBodies = new ArrayList<Body>();
         accumulateBodies(elem, bodies, ns);
@@ -119,8 +125,13 @@ public class MultipartRequestBody
         HeaderSet headers = new HeaderSet();
         for ( Element b : elem.children(ns) ) {
             if ( "header".equals(b.getLocalName()) ) {
-                String[] attr_names = { "name", "value" };
-                b.noOtherNCNameAttribute(attr_names);
+                try {
+                    String[] attr_names = { "name", "value" };
+                    b.noOtherNCNameAttribute(attr_names);
+                }
+                catch ( ModelException ex ) {
+                    throw new HttpClientException("Invalid attributes", ex);
+                }
                 String name  = b.getAttribute("name");
                 String value = b.getAttribute("value");
                 headers.add(name, value);
