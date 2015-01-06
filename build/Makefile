@@ -1,14 +1,14 @@
-JAVA.ver  := 0.3.1dev
+JAVA.ver  := 0.4.0
 JAVA.mod  := expath-http-client-java
 JAVA.root := $(JAVA.mod)-$(JAVA.ver)
 JAVA.prj  := ../http-client-java
 JAVA.jar  := $(JAVA.prj)/dist/http-client-java.jar
 
 # WARNING: Change /package/@version accordingly in saxon-xar/expath-pkg.xml !
-SAXON.ver  := 0.11.0dev
+SAXON.ver  := 0.11.0
 SAXON.mod  := expath-http-client-saxon
 SAXON.root := $(SAXON.mod)-$(SAXON.ver)
-SAXON.pkg  := $(SAXON.root)/expath-http-client-saxon
+SAXON.pkg  := $(SAXON.root)/content
 SAXON.prj  := ../http-client-saxon
 SAXON.jar  := $(SAXON.prj)/dist/http-client-saxon.jar
 
@@ -50,7 +50,7 @@ pkg-saxon:
 	cp "saxon-xar/wrapper.xq"     "$(SAXON.pkg)/xq/$(SAXON.mod).xq"
 	cp -pPR "$(JAVA.prj)/lib" "$(SAXON.pkg)"
 	cd "$(SAXON.root)" && zip -r "../$(SAXON.root).xar" \
-	    expath-pkg.xml saxon.xml cxan.xml expath-http-client-saxon
+	    expath-pkg.xml saxon.xml cxan.xml content
 	rm -rf "$(SAXON.root)"
 
 dist-saxon: pkg-saxon
