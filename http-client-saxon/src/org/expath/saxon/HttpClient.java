@@ -21,11 +21,12 @@ import org.expath.httpclient.HttpRequest;
 import org.expath.httpclient.HttpResponse;
 import org.expath.httpclient.impl.ApacheHttpConnection;
 import org.expath.httpclient.impl.RequestParser;
-import org.expath.httpclient.saxon.SaxonElement;
 import org.expath.httpclient.saxon.SaxonResult;
-import org.expath.httpclient.saxon.SaxonSequence;
 import org.expath.model.Element;
+import org.expath.model.ModelException;
 import org.expath.model.Sequence;
+import org.expath.model.saxon.SaxonElement;
+import org.expath.model.saxon.SaxonSequence;
 
 
 /**
@@ -105,7 +106,13 @@ public class HttpClient
                  , XPathException
     {
         Sequence b = new SaxonSequence(bodies, ctxt);
-        Element r = new SaxonElement(request, ctxt);
+        Element r;
+        try {
+            r = new SaxonElement(request, ctxt);
+        }
+        catch ( ModelException ex ) {
+            throw new HttpClientException("Error creating a Saxon element", ex);
+        }
         RequestParser parser = new RequestParser(r);
         HttpRequest req = parser.parse(b, href);
         // override anyway it href exists

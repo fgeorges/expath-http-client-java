@@ -9,16 +9,10 @@
 
 package org.expath.httpclient.saxon;
 
-import net.sf.saxon.event.Builder;
 import net.sf.saxon.expr.XPathContext;
-import net.sf.saxon.om.*;
-import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.type.BuiltInAtomicType;
-import net.sf.saxon.type.Untyped;
 import org.apache.http.Header;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
-import org.expath.httpclient.HttpConstants;
 import org.expath.httpclient.model.TreeBuilder;
 import org.expath.model.ModelException;
 
@@ -30,29 +24,13 @@ import org.expath.model.ModelException;
  * @date   2009-02-02
  */
 public class SaxonTreeBuilder
+        extends org.expath.model.saxon.SaxonTreeBuilder
         implements TreeBuilder
 {
-    public SaxonTreeBuilder(XPathContext ctxt, String ns)
-            throws HttpClientException
+    public SaxonTreeBuilder(XPathContext ctxt, String prefix, String ns)
+            throws ModelException
     {
-        myBuilder = ctxt.getController().makeBuilder();
-        myBuilder.open();
-        myNs = ns;
-    }
-
-    /**
-     * Provide the result in Saxon's object model.
-     */
-    public NodeInfo getCurrentRoot()
-            throws HttpClientException
-    {
-        try {
-            myBuilder.close();
-        }
-        catch ( XPathException ex ) {
-            throw new HttpClientException("Error closing the Saxon tree builder", ex);
-        }
-        return myBuilder.getCurrentRoot();
+        super(ctxt, prefix, ns);
     }
 
     @Override
@@ -74,63 +52,6 @@ public class SaxonTreeBuilder
             }
         }
     }
-
-    @Override
-    public void startElem(String localname)
-            throws ModelException
-    {
-        final String prefix = HttpConstants.HTTP_CLIENT_NS_PREFIX;
-        NodeName name = new FingerprintedQName(prefix, myNs, localname);
-        try {
-            myBuilder.startElement(name, Untyped.getInstance(), 0, 0);
-        }
-        catch ( XPathException ex ) {
-            throw new ModelException("Error starting element on the Saxon tree builder", ex);
-        }
-    }
-
-    @Override
-    public void attribute(String localname, CharSequence value)
-            throws ModelException
-    {
-        if ( value != null ) {
-            NodeName name = new NoNamespaceName(localname);
-            try {
-                myBuilder.attribute(name, BuiltInAtomicType.UNTYPED_ATOMIC, value, 0, 0);
-            }
-            catch ( XPathException ex ) {
-                throw new ModelException("Error creating attribute on the Saxon tree builder", ex);
-            }
-        }
-    }
-
-    @Override
-    public void startContent()
-            throws ModelException
-    {
-        try {
-            myBuilder.startContent();
-        }
-        catch ( XPathException ex ) {
-            throw new ModelException("Error starting content on the Saxon tree builder", ex);
-        }
-    }
-
-    @Override
-    public void endElem()
-            throws ModelException
-    {
-        try {
-            myBuilder.endElement();
-        }
-        catch ( XPathException ex ) {
-            throw new ModelException("Error ending element on the Saxon tree builder", ex);
-        }
-    }
-
-    private Builder myBuilder;
-    /** The namespace used for the elements. */
-    private String myNs;
 }
 
 

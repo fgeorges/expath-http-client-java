@@ -22,8 +22,10 @@ import net.sf.saxon.value.Base64BinaryValue;
 import net.sf.saxon.value.SequenceExtent;
 import net.sf.saxon.value.StringValue;
 import org.expath.httpclient.HttpClientException;
+import org.expath.httpclient.HttpConstants;
 import org.expath.httpclient.HttpResponse;
 import org.expath.httpclient.model.Result;
+import org.expath.model.ModelException;
 
 /**
  * Implementation of {@link Item} for Saxon.
@@ -74,10 +76,15 @@ public class SaxonResult
     public void add(HttpResponse response)
             throws HttpClientException
     {
-        SaxonTreeBuilder builder = new SaxonTreeBuilder(myCtxt, myNs);
-        response.outputResponseElement(builder);
-        Item elem = builder.getCurrentRoot();
-        myItems.add(0, elem);
+        try {
+            SaxonTreeBuilder builder = new SaxonTreeBuilder(myCtxt, HttpConstants.HTTP_NS_PREFIX, myNs);
+            response.outputResponseElement(builder);
+            Item elem = builder.getCurrentRoot();
+            myItems.add(0, elem);
+        }
+        catch ( ModelException ex ) {
+            throw new HttpClientException("Error building the response", ex);
+        }
     }
 
     public SequenceIterator newIterator()

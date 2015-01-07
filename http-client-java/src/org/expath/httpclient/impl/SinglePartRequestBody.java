@@ -15,6 +15,7 @@ import javax.xml.transform.OutputKeys;
 import net.iharder.Base64;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
+import org.expath.httpclient.HttpConstants;
 import org.expath.httpclient.HttpRequestBody;
 import org.expath.httpclient.SerializationParams;
 import org.expath.httpclient.impl.BodyFactory.Type;
@@ -86,7 +87,7 @@ public class SinglePartRequestBody
         }
         // check for not allowed attributes
         try {
-            elem.noOtherNCNameAttribute(attr_names);
+            elem.noOtherNCNameAttribute(attr_names, HttpConstants.BOTH_NS_URIS);
         }
         catch ( ModelException ex ) {
             throw new HttpClientException("Invalid attributes", ex);

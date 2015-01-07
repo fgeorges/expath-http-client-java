@@ -17,12 +17,15 @@ package org.expath.httpclient;
  */
 public class HttpConstants
 {
-    public final static String HTTP_NS_PREFIX = "http";
-    public final static String HTTP_NS_URI = "http://expath.org/ns/http";
-    public final static String HTTP_CLIENT_NS_PREFIX = "hc";
-    public final static String HTTP_CLIENT_NS_URI = "http://expath.org/ns/http-client";
-    public final static String HTTP_1_0 = "1.0";
-    public final static String HTTP_1_1 = "1.1";
+    public final static String   HTTP_NS_PREFIX = "http";
+    public final static String   HTTP_NS_URI = "http://expath.org/ns/http";
+    public final static String   HTTP_CLIENT_NS_PREFIX = "hc";
+    public final static String   HTTP_CLIENT_NS_URI = "http://expath.org/ns/http-client";
+    public final static String[] BOTH_NS_URIS = { HTTP_NS_URI, HTTP_CLIENT_NS_URI };
+    public final static String   HTTP_1_0 = "1.0";
+    public final static String   HTTP_1_1 = "1.1";
+    public final static String[] MULTIPART_ATTRS = { "media-type", "boundary" };
+    public final static String[] HEADER_ATTRS = { "name", "value" };
 }
 
 

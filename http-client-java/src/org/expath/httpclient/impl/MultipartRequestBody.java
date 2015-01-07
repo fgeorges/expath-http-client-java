@@ -16,6 +16,7 @@ import java.util.List;
 import org.apache.http.Header;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
+import org.expath.httpclient.HttpConstants;
 import org.expath.httpclient.HttpRequestBody;
 import org.expath.model.Element;
 import org.expath.model.ModelException;
@@ -42,8 +43,9 @@ public class MultipartRequestBody
         myBoundaryBytes = myBoundary.getBytes();
         // check for not allowed attributes
         try {
-            String[] attr_names = { "media-type", "boundary" };
-            elem.noOtherNCNameAttribute(attr_names);
+            elem.noOtherNCNameAttribute(
+                    HttpConstants.MULTIPART_ATTRS,
+                    HttpConstants.BOTH_NS_URIS);
         }
         catch ( ModelException ex ) {
             throw new HttpClientException("Invalid attributes", ex);
@@ -126,8 +128,9 @@ public class MultipartRequestBody
         for ( Element b : elem.children(ns) ) {
             if ( "header".equals(b.getLocalName()) ) {
                 try {
-                    String[] attr_names = { "name", "value" };
-                    b.noOtherNCNameAttribute(attr_names);
+                    b.noOtherNCNameAttribute(
+                            HttpConstants.HEADER_ATTRS,
+                            HttpConstants.BOTH_NS_URIS);
                 }
                 catch ( ModelException ex ) {
                     throw new HttpClientException("Invalid attributes", ex);
