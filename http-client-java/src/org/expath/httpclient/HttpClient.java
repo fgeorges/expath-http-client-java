@@ -7,30 +7,19 @@
 /* ------------------------------------------------------------------------ */
 
 
-package org.expath.saxon;
+package org.expath.httpclient;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import net.sf.saxon.expr.XPathContext;
-import net.sf.saxon.om.NodeInfo;
-import net.sf.saxon.om.SequenceIterator;
-import net.sf.saxon.trans.XPathException;
-import org.expath.httpclient.HttpClientException;
-import org.expath.httpclient.HttpConnection;
-import org.expath.httpclient.HttpRequest;
-import org.expath.httpclient.HttpResponse;
 import org.expath.httpclient.impl.ApacheHttpConnection;
 import org.expath.httpclient.impl.RequestParser;
-import org.expath.httpclient.saxon.SaxonResult;
-import org.expath.model.Element;
-import org.expath.model.ModelException;
-import org.expath.model.Sequence;
-import org.expath.model.saxon.SaxonElement;
-import org.expath.model.saxon.SaxonSequence;
+import org.expath.httpclient.model.Result;
+import org.expath.tools.model.Element;
+import org.expath.tools.model.Sequence;
 
 
 /**
- * EXPath module http-client, for Saxon.
+ * Facade for the EXPath HTTP Client, generic implementation for Java.
  *
  * @author Florent Georges
  * @date   2009-02-01
@@ -38,90 +27,86 @@ import org.expath.model.saxon.SaxonSequence;
 public class HttpClient
 {
     /**
-     * Implement the EXPath function http:send-request().
+     * Implement the EXPath function {@code http:send-request()}.
      *
      * <pre>
      * http:send-request($request as element(http:request)?) as item()+
      * </pre>
+     * 
+     * @param result The {@link Result} object to send the results to.
+     * @param request The {@code http:request} element.
+     * @return The result object.
+     * @throws HttpClientException If any error occurs.
      */
-    public static SaxonResult sendRequest(XPathContext ctxt, NodeInfo request)
-            throws XPathException
+    public static Result sendRequest(Result result, Element request)
+            throws HttpClientException
     {
-        return sendRequest(ctxt, request, null, null);
+        return sendRequest(result, request, null, null);
     }
 
     /**
-     * Implement the EXPath function http:send-request().
+     * Implement the EXPath function {@code http:send-request()}.
      *
      * <pre>
      * http:send-request($request as element(http:request)?,
      *                   $href as xs:string?) as item()+
      * </pre>
+     * 
+     * @param result The {@link Result} object to send the results to.
+     * @param request The {@code http:request} element.
+     * @param href The URL to sent the HTTP request to.  Overrides the one in
+     *      the request element.
+     * @return The result object.
+     * @throws HttpClientException If any error occurs.
      */
-    public static SaxonResult sendRequest(XPathContext ctxt,
-                                               NodeInfo request,
-                                               String href)
-            throws XPathException
+    public static Result sendRequest(Result result, Element request, String href)
+            throws HttpClientException
     {
-        return sendRequest(ctxt, request, href, null);
+        return sendRequest(result, request, href, null);
     }
 
     /**
-     * Implement the EXPath function http:send-request().
+     * Implement the EXPath function {@code http:send-request()}.
      *
      * <pre>
      * http:send-request($request as element(http:request)?,
      *                   $href as xs:string?,
      *                   $bodies as item()*) as item()+
      * </pre>
+     * 
+     * @param result The {@link Result} object to send the results to.
+     * @param request The {@code http:request} element.
+     * @param href The URL to sent the HTTP request to.  Overrides the one in
+     *      the request element.
+     * @param bodies The content of the HTTP request (the entity body, or bodies
+     *      in case of multi-part).
+     * @return The result object.
+     * @throws HttpClientException If any error occurs.
      */
-    public static SaxonResult sendRequest(XPathContext ctxt,
-                                               NodeInfo request,
-                                               String href,
-                                               SequenceIterator bodies)
-            throws XPathException
+    public static Result sendRequest(Result result, Element request, String href, Sequence bodies)
+            throws HttpClientException
     {
         HttpClient client = new HttpClient();
         try {
-            return client.doSendRequest(ctxt, request, href, bodies);
+            return client.doSendRequest(result, request, href, bodies);
         }
         catch ( HttpClientException ex ) {
-            throw new XPathException("Error sending the HTTP request", ex);
+            throw new HttpClientException("Error sending the HTTP request", ex);
         }
     }
 
-    // TODO: Within the latest draft, $content has been changed to $bodies...
-    // This is now an item()* instead of an item().
-    //
-    // TODO: Theoretically, the SequenceIterator should allow the
-    // implementation to be streamable (for instance to not parse the
-    // response content if the user does: http:send-request(...)[1],
-    // that is, if he/she does not actually access the content).  See
-    // if we can use that...
-    private SaxonResult doSendRequest(XPathContext ctxt,
-                                      NodeInfo request,
-                                      String href,
-                                      SequenceIterator bodies)
+    private Result doSendRequest(Result result, Element request, String href, Sequence bodies)
             throws HttpClientException
-                 , XPathException
     {
-        Sequence b = new SaxonSequence(bodies, ctxt);
-        Element r;
-        try {
-            r = new SaxonElement(request, ctxt);
-        }
-        catch ( ModelException ex ) {
-            throw new HttpClientException("Error creating a Saxon element", ex);
-        }
-        RequestParser parser = new RequestParser(r);
-        HttpRequest req = parser.parse(b, href);
+        RequestParser parser = new RequestParser(request);
+        HttpRequest req = parser.parse(bodies, href);
         // override anyway it href exists
         if ( href != null && ! "".equals(href) ) {
             req.setHref(href);
         }
         try {
             URI uri = new URI(req.getHref());
-            return sendOnce(uri, req, parser, ctxt);
+            return sendOnce(result, uri, req, parser);
         }
         catch ( URISyntaxException ex ) {
             throw new HttpClientException("Href is not valid: " + req.getHref(), ex);
@@ -134,10 +119,9 @@ public class HttpClient
      * Authentication may require to reply to an authentication challenge,
      * by sending again the request, with credentials.
      */
-    private SaxonResult sendOnce(URI uri, HttpRequest request, RequestParser parser, XPathContext ctxt)
+    private Result sendOnce(Result result, URI uri, HttpRequest request, RequestParser parser)
             throws HttpClientException
     {
-        SaxonResult result = new SaxonResult(ctxt, parser.getNamespaceURI());
         HttpConnection conn = new ApacheHttpConnection(uri);
         try {
             if ( parser.getSendAuth() ) {
@@ -149,7 +133,7 @@ public class HttpClient
                     conn.disconnect();
                     conn = new ApacheHttpConnection(uri);
                     // create a new result, and throw the old one away
-                    result = new SaxonResult(ctxt, parser.getNamespaceURI());
+                    result = result.makeNewResult();
                     request.send(result, conn, parser.getCredentials());
                 }
             }

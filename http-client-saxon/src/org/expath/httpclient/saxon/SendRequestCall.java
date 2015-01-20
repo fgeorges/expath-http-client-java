@@ -17,7 +17,12 @@ import net.sf.saxon.om.Sequence;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.StringValue;
-import org.expath.saxon.HttpClient;
+import org.expath.httpclient.HttpClient;
+import org.expath.httpclient.HttpClientException;
+import org.expath.tools.ToolsException;
+import org.expath.tools.model.Element;
+import org.expath.tools.saxon.model.SaxonElement;
+import org.expath.tools.saxon.model.SaxonSequence;
 
 /**
  * TODO: Doc...
@@ -47,8 +52,16 @@ public class SendRequestCall
                 throw new XPathException("Incorrect number of params: " + params.length);
         }
         SequenceIterator iter = bodies == null ? null : bodies.iterate();
-        SaxonResult result = HttpClient.sendRequest(ctxt, request, href, iter);
-        return result.newSequence();
+        SaxonSequence seq = new SaxonSequence(iter, ctxt);
+        SaxonResult result = new SaxonResult(ctxt, href);
+        try {
+            Element elem = new SaxonElement(request, ctxt);
+            result = (SaxonResult) HttpClient.sendRequest(result, elem, href, seq);
+            return result.newSequence();
+        }
+        catch ( ToolsException | HttpClientException ex ) {
+            throw new XPathException("Error sending the HTTP request", ex);
+        }
     }
 
     private NodeInfo getRequest(Sequence param)

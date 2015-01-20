@@ -11,17 +11,17 @@ package org.expath.httpclient.impl;
 
 import java.io.OutputStream;
 import java.util.Properties;
-import javax.xml.transform.OutputKeys;
+import javax.xml.namespace.QName;
 import net.iharder.Base64;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpConstants;
 import org.expath.httpclient.HttpRequestBody;
-import org.expath.httpclient.SerializationParams;
 import org.expath.httpclient.impl.BodyFactory.Type;
-import org.expath.model.Element;
-import org.expath.model.ModelException;
-import org.expath.model.Sequence;
+import org.expath.tools.ToolsException;
+import org.expath.tools.model.Element;
+import org.expath.tools.model.Sequence;
+import org.expath.tools.serial.SerialParameters;
 
 /**
  * TODO<doc>: ...
@@ -40,6 +40,31 @@ public class SinglePartRequestBody
     {
         super(elem);
         myMethod = method;
+        switch ( myMethod ) {
+            case XML:
+                mySerial.setMethod(new QName("xml"));
+                break;
+            case TEXT:
+                mySerial.setMethod(new QName("text"));
+                break;
+            case HTML:
+                mySerial.setMethod(new QName("html"));
+                break;
+            case XHTML:
+                mySerial.setMethod(new QName("xhtml"));
+                break;
+            case BINARY:
+            case BASE64:
+                // TODO: Set the proper namespace URI.
+                mySerial.setMethod(new QName("expath:base64"));
+                break;
+            case HEX:
+                // TODO: Set the proper namespace URI.
+                mySerial.setMethod(new QName("expath:hex"));
+                break;
+            default:
+                throw new HttpClientException("Unsupported method! (yet?): " + myMethod);
+        }
         String[] attr_names = {
             "src",
             "media-type",
@@ -60,8 +85,8 @@ public class SinglePartRequestBody
         };
         mySerial.setEncoding(elem.getAttribute(attr_names[7]));
         mySerial.setIndent(parseYesNo(elem, attr_names[9]));
-        mySerial.setOmitXmlDecl(parseYesNo(elem, attr_names[11]));
-        // ...
+        mySerial.setOmitXmlDeclaration(parseYesNo(elem, attr_names[11]));
+        // TODO: Add other serial parameters...
         {
             // FIXME: For now, most of the attrs are not supported.  Throw an
             // error if any of them is there...
@@ -89,7 +114,7 @@ public class SinglePartRequestBody
         try {
             elem.noOtherNCNameAttribute(attr_names, HttpConstants.BOTH_NS_URIS);
         }
-        catch ( ModelException ex ) {
+        catch ( ToolsException ex ) {
             throw new HttpClientException("Invalid attributes", ex);
         }
         // handle childs
@@ -105,7 +130,7 @@ public class SinglePartRequestBody
                 myChilds = body;
             }
         }
-        catch ( ModelException ex ) {
+        catch ( ToolsException ex ) {
             throw new HttpClientException("Technical error walking through the http:body content", ex);
         }
     }
@@ -159,8 +184,6 @@ public class SinglePartRequestBody
     public void serialize(OutputStream out)
             throws HttpClientException
     {
-        // the default serialization options
-        Properties options = getSerializationParams();
         if ( myMethod == Type.HEX ) {
             // TODO: Add support for HEX (== "base16")
             // out = new Base16.OutputStream(out, Base16.DECODE);
@@ -170,9 +193,9 @@ public class SinglePartRequestBody
             out = new Base64.OutputStream(out, Base64.DECODE);
         }
         try {
-            myChilds.serialize(out, options);
+            myChilds.serialize(out, mySerial);
         }
-        catch ( ModelException ex ) {
+        catch ( ToolsException ex ) {
             throw new HttpClientException("Error serializing the result", ex);
         }
     }
@@ -181,46 +204,6 @@ public class SinglePartRequestBody
     public boolean isMultipart()
     {
         return false;
-    }
-
-    public Properties getSerializationParams()
-            throws HttpClientException
-    {
-        Properties props = new Properties();
-        // method
-        switch ( myMethod ) {
-            case XML:
-                props.put(OutputKeys.METHOD, "xml");
-                break;
-            case TEXT:
-                props.put(OutputKeys.METHOD, "text");
-                break;
-            case HTML:
-                props.put(OutputKeys.METHOD, "html");
-                break;
-            case XHTML:
-                props.put(OutputKeys.METHOD, "xhtml");
-                break;
-            case BINARY:
-            case BASE64:
-                props.put(OutputKeys.METHOD, "expath:base64");
-                break;
-            case HEX:
-                props.put(OutputKeys.METHOD, "expath:hex");
-                break;
-            default:
-                throw new HttpClientException("Unsupported method! (yet): " + myMethod);
-        }
-        // encoding
-        setOutputProperty(props, mySerial.getEncoding(), OutputKeys.ENCODING);
-        // indent
-        setYesNoOutputProperty(props, mySerial.getIndent(), OutputKeys.INDENT);
-        // omit-xml-declaration
-        setYesNoOutputProperty(props, mySerial.getOmitXmlDecl(), OutputKeys.OMIT_XML_DECLARATION);
-        // TODO: Add support for other serialization parameters.
-        // ...
-        // return the properties
-        return props;
     }
 
     private void setOutputProperty(Properties props, String value, String key)
@@ -239,7 +222,7 @@ public class SinglePartRequestBody
 
     private Type myMethod;
     private Sequence myChilds;
-    private SerializationParams mySerial = new SerializationParams();
+    private SerialParameters mySerial = new SerialParameters();
 }
 
 

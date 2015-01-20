@@ -34,19 +34,60 @@ import org.expath.httpclient.HttpResponse;
 public interface Result
 {
     /**
+     * Construct a new {@link Result} object, from the same implementation.
+     * 
+     * TODO: This mechanism is not satisfactory.  It forces the user of the
+     * class {@link HttpClient} to down cast the result of {@code sendRequest()}
+     * to its own implementation of {@link Result}.  A better approach would be
+     * to make this an abstract class, that forwards everything to some
+     * {@code RequestResult} interface.  The abstract method would be a factory
+     * method as well, but then the client could add its own way to retrieve
+     * its own {@code RequestResult}, with the correct type.  A {@code RequestResult}
+     * object would represent the result of one HTTP request on the wire, so there
+     * could be a few in case of a authentication handshake, or a redirect, etc.
+     * 
+     * TODO: Actually, an even better approach would be to say that the function
+     * {@code http:send-request} must send exactly only ONE request on the wire.
+     * Authentication back-and-forth, redirects, and other alike would then be
+     * implemented in XSLT and XQuery themselves, by providing a library on top
+     * of the extension function (taking some configuration XML element, with
+     * options, function items, etc., saying what to do in case of such events.
+     * 
+     * That is, keep the extension implementation as a minimum, and share all
+     * the rest in XQuery and XSLT.  That would simplify the specification as
+     * well, and increase compatibility.
+     * 
+     * @return The new result object.
+     * @throws HttpClientException If any error occurs.
+     */
+    public Result makeNewResult()
+            throws HttpClientException;
+
+    /**
      * Add an {@code xs:string} to the result sequence.
+     * 
+     * @param string The string to add to the result sequence.
+     * @throws HttpClientException If any error occurs.
      */
     public void add(String string)
             throws HttpClientException;
 
     /**
      * Add an {@code xs:base64Binary} to the result sequence.
+     * 
+     * @param bytes The bytes representing the base64 binary item to add to the
+     *      result sequence.
+     * @throws HttpClientException If any error occurs.
      */
     public void add(byte[] bytes)
             throws HttpClientException;
 
     /**
      * Add a document node to the result sequence.
+     * 
+     * @param src The {@link Source} representing the document to add to the
+     *      result sequence.
+     * @throws HttpClientException If any error occurs.
      */
     public void add(Source src)
             throws HttpClientException;
@@ -58,6 +99,9 @@ public interface Result
      * method {@link HttpResponse#makeResultElement(TreeBuilder)} with a tree
      * builder for the same processor.  This must be added at the front of the
      * sequence, always, even if it is called after other methods.
+     * 
+     * @param response The response element to add to the result sequence.
+     * @throws HttpClientException If any error occurs.
      */
     public void add(HttpResponse response)
             throws HttpClientException;

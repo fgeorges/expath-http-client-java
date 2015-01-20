@@ -25,7 +25,7 @@ import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpConstants;
 import org.expath.httpclient.HttpResponse;
 import org.expath.httpclient.model.Result;
-import org.expath.model.ModelException;
+import org.expath.tools.ToolsException;
 
 /**
  * Implementation of {@link Item} for Saxon.
@@ -41,6 +41,13 @@ public class SaxonResult
         myItems = new ArrayList<>();
         myCtxt = ctxt;
         myNs = ns;
+    }
+
+    @Override
+    public Result makeNewResult()
+            throws HttpClientException
+    {
+        return new SaxonResult(myCtxt, myNs);
     }
 
     @Override
@@ -82,7 +89,7 @@ public class SaxonResult
             Item elem = builder.getCurrentRoot();
             myItems.add(0, elem);
         }
-        catch ( ModelException ex ) {
+        catch ( ToolsException ex ) {
             throw new HttpClientException("Error building the response", ex);
         }
     }
