@@ -10,7 +10,7 @@
 package org.expath.httpclient;
 
 import org.expath.httpclient.model.TreeBuilder;
-import org.expath.model.ModelException;
+import org.expath.tools.ToolsException;
 
 /**
  * TODO<doc>: ...
@@ -63,7 +63,7 @@ public class HttpResponse
             // end the response element
             b.endElem();
         }
-        catch ( ModelException ex ) {
+        catch ( ToolsException ex ) {
             throw new HttpClientException("Error building the response", ex);
         }
     }

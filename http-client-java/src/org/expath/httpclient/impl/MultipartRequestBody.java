@@ -18,9 +18,9 @@ import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpConstants;
 import org.expath.httpclient.HttpRequestBody;
-import org.expath.model.Element;
-import org.expath.model.ModelException;
-import org.expath.model.Sequence;
+import org.expath.tools.ToolsException;
+import org.expath.tools.model.Element;
+import org.expath.tools.model.Sequence;
 
 /**
  * TODO<doc>: ...
@@ -47,7 +47,7 @@ public class MultipartRequestBody
                     HttpConstants.MULTIPART_ATTRS,
                     HttpConstants.BOTH_NS_URIS);
         }
-        catch ( ModelException ex ) {
+        catch ( ToolsException ex ) {
             throw new HttpClientException("Invalid attributes", ex);
         }
         // handle http:header & http:body childs
@@ -132,7 +132,7 @@ public class MultipartRequestBody
                             HttpConstants.HEADER_ATTRS,
                             HttpConstants.BOTH_NS_URIS);
                 }
-                catch ( ModelException ex ) {
+                catch ( ToolsException ex ) {
                     throw new HttpClientException("Invalid attributes", ex);
                 }
                 String name  = b.getAttribute("name");

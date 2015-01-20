@@ -18,7 +18,7 @@ import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpResponseBody;
 import org.expath.httpclient.model.Result;
 import org.expath.httpclient.model.TreeBuilder;
-import org.expath.model.ModelException;
+import org.expath.tools.ToolsException;
 
 /**
  * TODO<doc>: ...
@@ -78,7 +78,7 @@ public class BinaryResponseBody
             b.startContent();
             b.endElem();
         }
-        catch ( ModelException ex ) {
+        catch ( ToolsException ex ) {
             throw new HttpClientException("Error building the body", ex);
         }
     }

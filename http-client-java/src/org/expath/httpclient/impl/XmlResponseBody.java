@@ -23,7 +23,7 @@ import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpResponseBody;
 import org.expath.httpclient.model.Result;
 import org.expath.httpclient.model.TreeBuilder;
-import org.expath.model.ModelException;
+import org.expath.tools.ToolsException;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -97,7 +97,7 @@ public class XmlResponseBody
             b.startContent();
             b.endElem();
         }
-        catch ( ModelException ex ) {
+        catch ( ToolsException ex ) {
             throw new HttpClientException("Error building the body", ex);
         }
     }

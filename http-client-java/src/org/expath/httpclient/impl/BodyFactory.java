@@ -22,8 +22,8 @@ import org.expath.httpclient.HttpConnection;
 import org.expath.httpclient.HttpRequestBody;
 import org.expath.httpclient.HttpResponseBody;
 import org.expath.httpclient.model.Result;
-import org.expath.model.Element;
-import org.expath.model.Sequence;
+import org.expath.tools.model.Element;
+import org.expath.tools.model.Sequence;
 
 
 /**

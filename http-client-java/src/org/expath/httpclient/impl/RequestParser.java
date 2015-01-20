@@ -15,10 +15,10 @@ import org.expath.httpclient.HttpConstants;
 import org.expath.httpclient.HttpCredentials;
 import org.expath.httpclient.HttpRequest;
 import org.expath.httpclient.HttpRequestBody;
-import org.expath.model.Attribute;
-import org.expath.model.Element;
-import org.expath.model.ModelException;
-import org.expath.model.Sequence;
+import org.expath.tools.ToolsException;
+import org.expath.tools.model.Attribute;
+import org.expath.tools.model.Element;
+import org.expath.tools.model.Sequence;
 
 /**
  * Parse the http:request element into a {@link HttpRequest} object.
@@ -235,7 +235,7 @@ public class RequestParser
         try {
             return a.getBoolean();
         }
-        catch ( ModelException ex ) {
+        catch ( ToolsException ex ) {
             throw new HttpClientException("Error parsing the attribute as a boolean", ex);
         }
     }
@@ -253,7 +253,7 @@ public class RequestParser
         try {
             return a.getInteger();
         }
-        catch ( ModelException ex ) {
+        catch ( ToolsException ex ) {
             throw new HttpClientException("Error parsing the attribute as an integer", ex);
         }
     }
