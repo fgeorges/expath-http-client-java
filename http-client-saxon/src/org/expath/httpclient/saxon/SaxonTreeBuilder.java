@@ -14,7 +14,7 @@ import org.apache.http.Header;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.model.TreeBuilder;
-import org.expath.model.ModelException;
+import org.expath.tools.ToolsException;
 
 
 /**
@@ -24,11 +24,11 @@ import org.expath.model.ModelException;
  * @date   2009-02-02
  */
 public class SaxonTreeBuilder
-        extends org.expath.model.saxon.SaxonTreeBuilder
+        extends org.expath.tools.saxon.model.SaxonTreeBuilder
         implements TreeBuilder
 {
     public SaxonTreeBuilder(XPathContext ctxt, String prefix, String ns)
-            throws ModelException
+            throws ToolsException
     {
         super(ctxt, prefix, ns);
     }
@@ -47,7 +47,7 @@ public class SaxonTreeBuilder
                 startContent();
                 endElem();
             }
-            catch ( ModelException ex ) {
+            catch ( ToolsException ex ) {
                 throw new HttpClientException("Error building the header " + name, ex);
             }
         }
