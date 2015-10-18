@@ -62,22 +62,17 @@ public class HrefRequestBody
     {
         try {
             String filename = new URI(myHref).getPath();
-            InputStream in = new FileInputStream(new File(filename));
-            byte[] buf = new byte[4096];
-            int l = -1;
-            while ( (l = in.read(buf)) != -1 ) {
-                out.write(buf, 0, l);
+            try (final InputStream in = new FileInputStream(new File(filename))) {
+                byte[] buf = new byte[4096];
+                int l = -1;
+                while ((l = in.read(buf)) != -1) {
+                    out.write(buf, 0, l);
+                }
+            } catch (IOException ex) {
+                throw new HttpClientException("Error sending the file content", ex);
             }
-            in.close();
-        }
-        catch ( URISyntaxException ex ) {
+        } catch ( URISyntaxException ex ) {
             throw new HttpClientException("Bad URI: " + myHref, ex);
-        }
-        catch ( FileNotFoundException ex ) {
-            throw new HttpClientException("Error sending the file content", ex);
-        }
-        catch ( IOException ex ) {
-            throw new HttpClientException("Error sending the file content", ex);
         }
     }
 

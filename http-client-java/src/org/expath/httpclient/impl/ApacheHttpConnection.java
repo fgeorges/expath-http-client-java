@@ -9,10 +9,7 @@
 
 package org.expath.httpclient.impl;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ProxySelector;
 import java.net.URI;
 import org.apache.commons.logging.Log;
@@ -36,6 +33,7 @@ import org.apache.http.client.methods.HttpTrace;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.params.ClientPNames;
 import org.apache.http.conn.routing.HttpRoutePlanner;
+import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentProducer;
 import org.apache.http.entity.EntityTemplate;
@@ -45,6 +43,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.ProxySelectorRoutePlanner;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.util.Args;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpConnection;
@@ -353,7 +352,7 @@ public class ApacheHttpConnection
             return;
         }
         // make the entity from a new producer
-        HttpEntity entity;
+        final HttpEntity entity;
         if ( myVersion == HttpVersion.HTTP_1_1 ) {
             // Take advantage of HTTP 1.1 chunked encoding to stream the
             // payload directly to the request.
@@ -366,10 +365,14 @@ public class ApacheHttpConnection
             // With HTTP 1.0, chunked encoding is not supported, so first
             // serialize into memory and use the resulting byte array as the
             // entity payload.
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            body.serialize(buffer);
-            entity = new ByteArrayEntity(buffer.toByteArray());
+            try (final ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+                body.serialize(buffer);
+                entity = new ByteArrayEntity(buffer.toByteArray());
+            } catch (final IOException e) {
+                throw new HttpClientException(e.getMessage(), e);
+            }
         }
+
         // cast the request
         HttpEntityEnclosingRequestBase req = null;
         if ( ! (myRequest instanceof HttpEntityEnclosingRequestBase) ) {

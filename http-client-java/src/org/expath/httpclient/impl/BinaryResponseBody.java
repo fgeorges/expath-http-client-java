@@ -48,8 +48,7 @@ public class BinaryResponseBody
     {
         myContentType = type;
         myHeaders = headers;
-        try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try(final ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buf = new byte[4096];
             int read = 0;
             while ( (read = in.read(buf)) > 0 ) {
