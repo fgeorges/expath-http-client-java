@@ -9,6 +9,7 @@
 
 package org.expath.httpclient.saxon;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.transform.Source;
@@ -50,19 +51,44 @@ public class SaxonResult
     }
 
     @Override
-    public void add(String string)
+    public void add(Reader reader)
             throws HttpClientException
     {
-        Item item = new StringValue(string);
-        myItems.add(item);
+        try(final BufferedReader buf_in = new BufferedReader(reader)) {
+            final StringBuilder builder = new StringBuilder();
+
+            String buf = null;
+            while ( (buf = buf_in.readLine()) != null ) {
+                builder.append(buf);
+                builder.append('\n');
+            }
+            final String value = builder.toString();
+
+            Item item = new StringValue(value);
+            myItems.add(item);
+        }
+        catch ( final IOException ex ) {
+            throw new HttpClientException("error reading HTTP response", ex);
+        }
     }
 
     @Override
-    public void add(byte[] bytes)
+    public void add(InputStream inputStream)
             throws HttpClientException
     {
-        Item item = new Base64BinaryValue(bytes);
-        myItems.add(item);
+        try(final ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            final byte[] buf = new byte[4096];
+            int read = -1;
+            while ( (read = inputStream.read(buf)) > 0 ) {
+                    out.write(buf, 0, read);
+            }
+            final byte[] bytes = out.toByteArray();
+
+            Item item = new Base64BinaryValue(bytes);
+            myItems.add(item);
+        } catch(final IOException e) {
+            throw new HttpClientException(e.getMessage(), e);
+        }
     }
 
     @Override

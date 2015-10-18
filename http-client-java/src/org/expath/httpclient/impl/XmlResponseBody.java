@@ -13,6 +13,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
@@ -39,15 +41,9 @@ public class XmlResponseBody
             throws HttpClientException
     {
         // TODO: ...
-        String charset = "utf-8";
-        try {
-            Reader reader = new InputStreamReader(in, charset);
-            init(result, reader, type, headers, html);
-        }
-        catch ( UnsupportedEncodingException ex ) {
-            String msg = "not supported charset reading HTTP response: " + charset;
-            throw new HttpClientException(msg, ex);
-        }
+        final Charset charset = StandardCharsets.UTF_8;
+        final Reader reader = new InputStreamReader(in, charset);
+        init(result, reader, type, headers, html);
     }
 
     public XmlResponseBody(Result result, Reader in, ContentType type, HeaderSet headers, boolean html)
@@ -56,7 +52,7 @@ public class XmlResponseBody
         init(result, in, type, headers, html);
     }
 
-    private void init(Result result, Reader in, ContentType type, HeaderSet headers, boolean html)
+    private void init(final Result result, final Reader in, final ContentType type, final HeaderSet headers, final boolean html)
             throws HttpClientException
     {
         myContentType = type;
@@ -71,13 +67,12 @@ public class XmlResponseBody
                 InputSource input = new InputSource(in);
                 src = new SAXSource(parser, input);
                 src.setSystemId(sys_id);
-            }
-            else {
+            } else {
                 src = new StreamSource(in, sys_id);
             }
             result.add(src);
         }
-        catch ( SAXException ex ) {
+        catch (SAXException ex) {
             throw new HttpClientException("error parsing result HTML", ex);
         }
     }
