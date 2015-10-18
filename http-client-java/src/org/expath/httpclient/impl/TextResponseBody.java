@@ -9,12 +9,10 @@
 
 package org.expath.httpclient.impl;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 import org.expath.httpclient.ContentType;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
@@ -34,45 +32,20 @@ public class TextResponseBody
     public TextResponseBody(Result result, InputStream in, ContentType type, HeaderSet headers)
             throws HttpClientException
     {
-        // FIXME: ...
-        String charset = "utf-8";
-        try {
-            Reader reader = new InputStreamReader(in, charset);
-            init(result, reader, type, headers);
-        }
-        catch ( UnsupportedEncodingException ex ) {
-            String msg = "not supported charset reading HTTP response: " + charset;
-            throw new HttpClientException(msg, ex);
-        }
+        myContentType = type;
+        myHeaders = headers;
+        // TODO: ...
+        final Charset charset = StandardCharsets.UTF_8;
+        final Reader reader = new InputStreamReader(in, charset);
+        result.add(reader);
     }
 
     public TextResponseBody(Result result, Reader in, ContentType type, HeaderSet headers)
             throws HttpClientException
     {
-        init(result, in, type, headers);
-    }
-
-    private void init(Result result, Reader in, ContentType type, HeaderSet headers)
-            throws HttpClientException
-    {
         myContentType = type;
         myHeaders = headers;
-        // BufferedReader handles the ends of line (all \n, \r, and \r\n are
-        // transformed to \n)
-        try {
-            StringBuilder builder = new StringBuilder();
-            BufferedReader buf_in = new BufferedReader(in);
-            String buf = null;
-            while ( (buf = buf_in.readLine()) != null ) {
-                builder.append(buf);
-                builder.append('\n');
-            }
-            String value = builder.toString();
-            result.add(value);
-        }
-        catch ( IOException ex ) {
-            throw new HttpClientException("error reading HTTP response", ex);
-        }
+        result.add(in);
     }
 
     @Override
