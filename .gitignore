@@ -2,6 +2,7 @@
 /build/expath-http-client-saxon-*.xar
 /build/expath-http-client-saxon-*.zip
 /http-client-java/nbproject/private/
+/http-client-java/nbproject/genfiles.properties
 /http-client-saxon/nbproject/private/
 /http-client-saxon/nbproject/genfiles.properties
 /http-client-java/build/
