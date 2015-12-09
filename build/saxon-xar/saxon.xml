@@ -2,12 +2,13 @@
 
    <jar>jar/expath-http-client-java.jar</jar>
    <jar>jar/expath-http-client-saxon.jar</jar>
-   <jar>lib/commons-codec-1.6.jar</jar>
-   <jar>lib/commons-logging-1.1.1.jar</jar>
-   <jar>lib/httpclient-4.2.3.jar</jar>
-   <jar>lib/httpcore-4.2.2.jar</jar>
+   <jar>lib/commons-codec-1.10.jar</jar>
+   <jar>lib/commons-logging-1.2.jar</jar>
+   <jar>lib/httpclient-4.5.1.jar</jar>
+   <jar>lib/httpcore-4.4.3.jar</jar>
    <jar>lib/tagsoup-1.2.jar</jar>
-   <jar>lib/apache-mime4j-0.6.jar</jar>
+   <jar>lib/apache-mime4j-core-0.7.2.jar</jar>
+   <jar>lib/apache-mime4j-dom-0.7.2.jar</jar>
 
    <function>org.expath.httpclient.saxon.SendRequestFunction</function>
 

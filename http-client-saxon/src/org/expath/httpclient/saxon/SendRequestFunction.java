@@ -31,6 +31,28 @@ import org.expath.pkg.saxon.EXPathFunctionDefinition;
 public class SendRequestFunction
         extends EXPathFunctionDefinition
 {
+// TODO: To adapt to the new EXPath Tools Saxon facilities...
+//
+//    public SendRequestFunction(Library lib)
+//    {
+//        super(lib);
+//    }
+//
+//    @Override
+//    protected Definition makeDefinition()
+//            throws ToolsException
+//    {
+//        Types types = new Types(library());
+//        return library()
+//                .function(this, LOCAL_NAME)
+//                .returns(Types.SEVERAL_ITEM)
+//                .param(types.singleElement(PARAM_REQ, null), PARAM_REQ)
+//                .optional()
+//                .param(Types.OPTIONAL_STRING, PARAM_URL)
+//                .param(Types.ANY_ITEM, PARAM_BODIES)
+//                .make();
+//    }
+
     @Override
     public void setConfiguration(Configuration config)
     {

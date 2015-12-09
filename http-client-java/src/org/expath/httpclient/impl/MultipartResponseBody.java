@@ -18,9 +18,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
 import org.apache.james.mime4j.MimeException;
-import org.apache.james.mime4j.field.AbstractField;
-import org.apache.james.mime4j.parser.Field;
-import org.apache.james.mime4j.parser.MimeTokenStream;
+import org.apache.james.mime4j.stream.EntityState;
+import org.apache.james.mime4j.stream.Field;
+import org.apache.james.mime4j.stream.MimeTokenStream;
 import org.expath.httpclient.ContentType;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
@@ -87,11 +87,11 @@ public class MultipartResponseBody
         parser.parseHeadless(in, type);
         try {
             HeaderSet headers = null;
-            for ( int state = parser.getState();
-                  state != MimeTokenStream.T_END_OF_STREAM;
+            for ( EntityState state = parser.getState();
+                  state != EntityState.T_END_OF_STREAM;
                   state = parser.next() )
             {
-                if ( state == MimeTokenStream.T_START_HEADER ) {
+                if ( state == EntityState.T_START_HEADER ) {
                     headers = new HeaderSet();
                 }
                 handleParserState(result, parser, headers);
@@ -105,7 +105,7 @@ public class MultipartResponseBody
     private void handleParserState(Result result, MimeTokenStream parser, HeaderSet headers)
             throws HttpClientException
     {
-        int state = parser.getState();
+        EntityState state = parser.getState();
         if ( LOG.isDebugEnabled() ) {
             LOG.debug(MimeTokenStream.stateToString(state));
         }
@@ -114,17 +114,17 @@ public class MultipartResponseBody
             // right after START_MESSAGE (without the corresponding
             // START_HEADER).  So if headers == null, we can just ignore
             // this state.
-            case MimeTokenStream.T_END_HEADER:
+            case T_END_HEADER:
                 // TODO: Just ignore anyway...?
                 break;
-            case MimeTokenStream.T_FIELD:
+            case T_FIELD:
                 Field f = parser.getField();
                 if ( LOG.isDebugEnabled() ) {
                     LOG.debug("  field: " + f);
                 }
                 headers.add(f.getName(), parseFieldBody(f));
                 break;
-            case MimeTokenStream.T_BODY:
+            case T_BODY:
                 if ( LOG.isDebugEnabled() ) {
                     LOG.debug("  body desc: " + parser.getBodyDescriptor());
                 }
@@ -132,15 +132,15 @@ public class MultipartResponseBody
                 myParts.add(b);
                 break;
             // START_HEADER is handled in the calling analyzeParts()
-            case MimeTokenStream.T_START_HEADER:
-            case MimeTokenStream.T_END_BODYPART:
-            case MimeTokenStream.T_END_MESSAGE:
-            case MimeTokenStream.T_END_MULTIPART:
-            case MimeTokenStream.T_EPILOGUE:
-            case MimeTokenStream.T_PREAMBLE:
-            case MimeTokenStream.T_START_BODYPART:
-            case MimeTokenStream.T_START_MESSAGE:
-            case MimeTokenStream.T_START_MULTIPART:
+            case T_START_HEADER:
+            case T_END_BODYPART:
+            case T_END_MESSAGE:
+            case T_END_MULTIPART:
+            case T_EPILOGUE:
+            case T_PREAMBLE:
+            case T_START_BODYPART:
+            case T_START_MESSAGE:
+            case T_START_MULTIPART:
                 // ignore
                 break;
             // In a first time, take a very defensive approach, and
@@ -156,17 +156,18 @@ public class MultipartResponseBody
     private String parseFieldBody(Field f)
             throws HttpClientException
     {
-        try {
-            String b = AbstractField.parse(f.getRaw()).getBody();
+//        try {
+            // WHy did I use AbstractField in the first place?
+            String b = f.getBody() /* AbstractField.parse(f.getRaw()).getBody() */;
             if ( LOG.isDebugEnabled() ) {
                 LOG.debug("Field: " + f.getName() + ": [" + b + "]");
             }
             return b;
-        }
-        catch ( MimeException ex ) {
-            LOG.error("Field value parsing error (" + f + ")", ex);
-            throw new HttpClientException("Field value parsing error (" + f + ")", ex);
-        }
+//        }
+//        catch ( MimeException ex ) {
+//            LOG.error("Field value parsing error (" + f + ")", ex);
+//            throw new HttpClientException("Field value parsing error (" + f + ")", ex);
+//        }
     }
 
     private HttpResponseBody makeResponsePart(Result result, HeaderSet headers, MimeTokenStream parser)
@@ -206,7 +207,7 @@ public class MultipartResponseBody
     private List<HttpResponseBody> myParts;
     private ContentType myContentType;
     private String myBoundary;
-    private static Log LOG = LogFactory.getLog(MultipartResponseBody.class);
+    private static final Log LOG = LogFactory.getLog(MultipartResponseBody.class);
 }
 
 
