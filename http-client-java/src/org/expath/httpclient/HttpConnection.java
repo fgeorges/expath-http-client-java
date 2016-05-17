@@ -18,7 +18,6 @@ import java.io.InputStream;
  * implement it.
  *
  * @author Florent Georges
- * @date   2009-02-02
  */
 public interface HttpConnection
 {

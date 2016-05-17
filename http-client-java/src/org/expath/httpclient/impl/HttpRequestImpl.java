@@ -25,10 +25,9 @@ import org.expath.httpclient.HttpResponseBody;
 import org.expath.httpclient.model.Result;
 
 /**
- * TODO<doc>: ...
+ * Implementation of a HTTP request.
  *
  * @author Florent Georges
- * @date   2009-02-02
  */
 public class HttpRequestImpl
         implements HttpRequest

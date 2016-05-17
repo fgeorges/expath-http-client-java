@@ -13,7 +13,6 @@ package org.expath.httpclient;
  * Generic exception for the EXPath HTTP Client implementation in Java.
  *
  * @author Florent Georges
- * @date   2011-03-01
  */
 public class HttpClientException
         extends Exception

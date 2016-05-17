@@ -24,10 +24,9 @@ import org.expath.tools.model.Sequence;
 import org.expath.tools.serial.SerialParameters;
 
 /**
- * TODO<doc>: ...
+ * A body in the request, defined by content.
  *
  * @author Florent Georges
- * @date   2009-02-06
  */
 public class SinglePartRequestBody
         extends HttpRequestBody

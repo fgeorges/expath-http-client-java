@@ -23,10 +23,9 @@ import org.expath.tools.model.Element;
 import org.expath.tools.model.Sequence;
 
 /**
- * TODO<doc>: ...
+ * A multipart body in the request.
  *
  * @author Florent Georges
- * @date   2009-02-04
  */
 public class MultipartRequestBody
         extends HttpRequestBody

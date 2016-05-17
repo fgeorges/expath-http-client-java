@@ -23,10 +23,9 @@ import org.expath.httpclient.HttpRequestBody;
 import org.expath.tools.model.Element;
 
 /**
- * TODO<doc>: ...
+ * A body in the request, defined by reference.
  *
  * @author Florent Georges
- * @date   2009-02-25
  */
 public class HrefRequestBody
         extends HttpRequestBody

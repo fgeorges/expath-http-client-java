@@ -26,7 +26,6 @@ import org.expath.pkg.saxon.EXPathFunctionDefinition;
  * TODO: Doc...
  *
  * @author Florent Georges
- * @date   2009-08-08
  */
 public class SendRequestFunction
         extends EXPathFunctionDefinition

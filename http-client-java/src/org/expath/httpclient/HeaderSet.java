@@ -19,13 +19,12 @@ import org.apache.http.HeaderElement;
 import org.apache.http.message.BasicHeader;
 
 /**
- * TODO<doc>: ...
+ * TODO: Doc...
  *
  * TODO: Change this class to a real wrapper around a {@link Header[]} or a
- * {@link Collection<Header>}.
+ * {@link Collection}&lt;Header&gt;.
  *
  * @author Florent Georges
- * @date   2009-02-21
  */
 public class HeaderSet
         implements Iterable<Header>

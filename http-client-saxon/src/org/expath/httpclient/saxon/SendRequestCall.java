@@ -28,7 +28,6 @@ import org.expath.tools.saxon.model.SaxonSequence;
  * TODO: Doc...
  *
  * @author Florent Georges
- * @date   2009-08-08
  */
 public class SendRequestCall
         extends ExtensionFunctionCall

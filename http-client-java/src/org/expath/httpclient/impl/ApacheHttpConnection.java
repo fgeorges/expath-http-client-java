@@ -53,10 +53,9 @@ import org.expath.httpclient.HttpCredentials;
 import org.expath.httpclient.HttpRequestBody;
 
 /**
- * TODO<doc>: ...
+ * An implementation of an HTTP connection using Apachhe HTTP Client.
  *
  * @author Florent Georges
- * @date   2009-02-02
  */
 public class ApacheHttpConnection
         implements HttpConnection

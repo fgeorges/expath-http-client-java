@@ -10,10 +10,9 @@
 package org.expath.httpclient;
 
 /**
- * TODO<doc>: ...
+ * TODO: Doc...
  *
  * @author Florent Georges
- * @date   2009-02-22
  */
 public class HttpCredentials
 {

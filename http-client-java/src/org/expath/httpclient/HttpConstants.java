@@ -13,7 +13,6 @@ package org.expath.httpclient;
  * Centralize some constants.
  *
  * @author Florent Georges
- * @date   2009-02-02
  */
 public class HttpConstants
 {

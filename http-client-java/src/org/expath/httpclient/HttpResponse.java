@@ -13,12 +13,11 @@ import org.expath.httpclient.model.TreeBuilder;
 import org.expath.tools.ToolsException;
 
 /**
- * TODO<doc>: ...
+ * A HTTP response.
  *
  * TODO: Make an abstract class, and factorize code...
  *
  * @author Florent Georges
- * @date   2009-02-02
  */
 public class HttpResponse
 {

@@ -21,7 +21,6 @@ import org.apache.http.NameValuePair;
  * string without any param on the other hand.
  *
  * @author Florent Georges
- * @date   2009-02-22
  */
 public class ContentType
 {

@@ -15,7 +15,6 @@ import org.expath.httpclient.model.Result;
  * An HTTP request.
  *
  * @author Florent Georges
- * @date   2009-02-02
  */
 public interface HttpRequest
 {

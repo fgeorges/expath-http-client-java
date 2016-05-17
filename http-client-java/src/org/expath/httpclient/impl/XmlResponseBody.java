@@ -28,10 +28,9 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * TODO<doc>: ...
+ * An XML body in the response.
  *
  * @author Florent Georges
- * @date   2009-02-06
  */
 public class XmlResponseBody
         implements HttpResponseBody

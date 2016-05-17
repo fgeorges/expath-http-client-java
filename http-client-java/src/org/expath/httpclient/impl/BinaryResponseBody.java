@@ -21,10 +21,9 @@ import org.expath.httpclient.model.TreeBuilder;
 import org.expath.tools.ToolsException;
 
 /**
- * TODO<doc>: ...
+ * A binary body in the response.
  *
  * @author Florent Georges
- * @date   2009-02-03
  */
 public class BinaryResponseBody
         implements HttpResponseBody

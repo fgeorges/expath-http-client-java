@@ -23,7 +23,6 @@ import org.expath.tools.model.Element;
  * connection output stream (so avoiding to parse it to an intermediary format.)
  * 
  * @author Florent Georges
- * @date   2009-02-02
  */
 public abstract class HttpRequestBody
 {

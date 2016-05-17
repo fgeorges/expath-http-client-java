@@ -31,10 +31,9 @@ import org.expath.httpclient.model.TreeBuilder;
 import org.expath.tools.ToolsException;
 
 /**
- * TODO<doc>: ...
+ * A multipart body in the response.
  *
  * @author Florent Georges
- * @date   2009-02-04
  */
 public class MultipartResponseBody
         implements HttpResponseBody

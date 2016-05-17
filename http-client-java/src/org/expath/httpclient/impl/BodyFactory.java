@@ -30,7 +30,6 @@ import org.expath.tools.model.Sequence;
  * Factory class for bodies, either in requests or in responses.
  *
  * @author Florent Georges
- * @date   2009-02-03
  */
 public class BodyFactory
 {

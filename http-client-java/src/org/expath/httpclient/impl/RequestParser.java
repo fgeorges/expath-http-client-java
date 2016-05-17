@@ -24,7 +24,6 @@ import org.expath.tools.model.Sequence;
  * Parse the http:request element into a {@link HttpRequest} object.
  *
  * @author Florent Georges
- * @date   2011-03-10
  */
 public class RequestParser
 {

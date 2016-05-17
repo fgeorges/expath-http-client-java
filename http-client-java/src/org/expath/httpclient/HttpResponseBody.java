@@ -12,10 +12,9 @@ package org.expath.httpclient;
 import org.expath.httpclient.model.TreeBuilder;
 
 /**
- * TODO<doc>: ...
+ * A body in a HTTP response.
  *
  * @author Florent Georges
- * @date   2009-02-02
  */
 public interface HttpResponseBody
 {

@@ -22,7 +22,6 @@ import org.expath.tools.model.Sequence;
  * Facade for the EXPath HTTP Client, generic implementation for Java.
  *
  * @author Florent Georges
- * @date   2009-02-01
  */
 public class HttpClient
 {

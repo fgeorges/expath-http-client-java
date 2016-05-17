@@ -16,10 +16,9 @@ import org.apache.http.NameValuePair;
 import org.apache.http.cookie.Cookie;
 
 /**
- * TODO<doc>: ...
+ * Helper to log HTTP-specific stuff.
  *
  * @author Florent Georges
- * @date   2009-08-04
  */
 public class LoggerHelper
 {

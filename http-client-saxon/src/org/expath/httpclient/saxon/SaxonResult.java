@@ -31,7 +31,6 @@ import org.expath.tools.ToolsException;
  * Implementation of {@link Item} for Saxon.
  *
  * @author Florent Georges
- * @date   2011-03-10
  */
 public class SaxonResult
         implements Result

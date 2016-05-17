@@ -16,7 +16,6 @@ import org.expath.httpclient.HttpClientException;
  * A generic interface to build a tree, independent on any processor.
  *
  * @author Florent Georges
- * @date   2011-03-10
  */
 public interface TreeBuilder
         extends org.expath.tools.model.TreeBuilder

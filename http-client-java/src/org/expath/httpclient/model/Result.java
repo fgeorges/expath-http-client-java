@@ -29,7 +29,6 @@ import org.expath.httpclient.HttpResponse;
  * the sequence.
  *
  * @author Florent Georges
- * @date   2011-03-10
  */
 public interface Result
 {
@@ -37,7 +36,7 @@ public interface Result
      * Construct a new {@link Result} object, from the same implementation.
      * 
      * TODO: This mechanism is not satisfactory.  It forces the user of the
-     * class {@link HttpClient} to down cast the result of {@code sendRequest()}
+     * class {@code HttpClient} to down cast the result of {@code sendRequest()}
      * to its own implementation of {@link Result}.  A better approach would be
      * to make this an abstract class, that forwards everything to some
      * {@code RequestResult} interface.  The abstract method would be a factory
@@ -96,7 +95,7 @@ public interface Result
      * Add the http:response element to the result sequence.
      *
      * The implementation for a specific processor is supposed to call the
-     * method {@link HttpResponse#makeResultElement(TreeBuilder)} with a tree
+     * method {@code HttpResponse#makeResultElement(TreeBuilder)} with a tree
      * builder for the same processor.  This must be added at the front of the
      * sequence, always, even if it is called after other methods.
      * 

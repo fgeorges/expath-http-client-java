@@ -21,7 +21,6 @@ import org.expath.tools.ToolsException;
  * Implementation of {@link TreeBuilder} for Saxon.
  *
  * @author Florent Georges
- * @date   2009-02-02
  */
 public class SaxonTreeBuilder
         extends org.expath.tools.saxon.model.SaxonTreeBuilder
