@@ -1,11 +1,11 @@
-JAVA.ver  := 0.6.0dev
+JAVA.ver  := 0.6.0
 JAVA.mod  := expath-http-client-java
 JAVA.root := $(JAVA.mod)-$(JAVA.ver)
 JAVA.prj  := ../http-client-java
 JAVA.jar  := $(JAVA.prj)/dist/http-client-java.jar
 
 # WARNING: Change /package/@version accordingly in saxon-xar/expath-pkg.xml !
-SAXON.ver  := 0.13.0dev
+SAXON.ver  := 0.13.0
 SAXON.mod  := expath-http-client-saxon
 SAXON.root := $(SAXON.mod)-$(SAXON.ver)
 SAXON.pkg  := $(SAXON.root)/content
