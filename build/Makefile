@@ -13,6 +13,9 @@ SAXON.prj  := ../http-client-saxon
 SAXON.jar  := $(SAXON.prj)/dist/http-client-saxon.jar
 
 SAMPLES.dir := ../samples
+REVISION    := $(shell git show-ref --hash --abbrev HEAD)
+prop-java   := $(JAVA.prj)/src/org/expath/httpclient/version.properties
+prop-saxon  := $(SAXON.prj)/src/org/expath/httpclient/saxon/version.properties
 
 all: clean dist
 
@@ -20,6 +23,8 @@ clean: clean-java clean-saxon
 dist:  dist-java  dist-saxon
 
 dist-java:
+	echo "org.expath.httpclient.version=$(JAVA.ver)"   >  $(prop-java)
+	echo "org.expath.httpclient.revision=$(REVISION)" >> $(prop-java)
 	( cd "$(JAVA.prj)" && ant )
 	mkdir "$(JAVA.root)"
 	echo "Version: $(JAVA.ver)" > "$(JAVA.root)/VERSION"
@@ -32,9 +37,10 @@ dist-java:
 	    -exec rm -rf {} \; 2>/dev/null || true
 #	mkdir "$(JAVA.root)/samples"
 	zip -r "$(JAVA.root).zip" "$(JAVA.root)"
-	rm -rf "$(JAVA.root)"
 
 pkg-saxon:
+	echo "org.expath.httpclient.saxon.version=$(SAXON.ver)" >  $(prop-saxon)
+	echo "org.expath.httpclient.saxon.revision=$(REVISION)" >> $(prop-saxon)
 	( cd "$(SAXON.prj)" && ant )
 	mkdir "$(SAXON.root)"
 	mkdir "$(SAXON.pkg)"
@@ -65,7 +71,6 @@ dist-saxon: pkg-saxon
 	mkdir "$(SAXON.root)/samples"
 	cp "$(SAMPLES.dir)/simple-get.xsl" "$(SAXON.root)/samples"
 	zip -r "$(SAXON.root).zip" "$(SAXON.root)"
-	rm -rf "$(SAXON.root)"
 
 clean-java:
 	rm -rf "$(JAVA.root)"
