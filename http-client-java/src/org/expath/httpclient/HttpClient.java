@@ -86,12 +86,7 @@ public class HttpClient
             throws HttpClientException
     {
         HttpClient client = new HttpClient();
-        try {
-            return client.doSendRequest(result, request, href, bodies);
-        }
-        catch ( HttpClientException ex ) {
-            throw new HttpClientException("Error sending the HTTP request", ex);
-        }
+        return client.doSendRequest(result, request, href, bodies);
     }
 
     private Result doSendRequest(Result result, Element request, String href, Sequence bodies)
