@@ -37,7 +37,7 @@ public class SaxonResult
 {
     public SaxonResult(XPathContext ctxt, String ns)
     {
-        myItems = new ArrayList<>();
+        myItems = new ArrayList<Item>();
         myCtxt = ctxt;
         myNs = ns;
     }

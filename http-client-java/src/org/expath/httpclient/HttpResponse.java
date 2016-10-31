@@ -67,11 +67,11 @@ public class HttpResponse
         }
     }
 
-    private int myStatus;
-    private String myMessage;
-    private HeaderSet myHeaders;
-    private HttpResponseBody myBody;
-    private long myTime;
+    private final int myStatus;
+    private final String myMessage;
+    private final HeaderSet myHeaders;
+    private final HttpResponseBody myBody;
+    private final long myTime;
 }
 
 

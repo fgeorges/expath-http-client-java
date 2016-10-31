@@ -19,6 +19,7 @@ import net.sf.saxon.trans.XPathException;
 import net.sf.saxon.value.StringValue;
 import org.expath.httpclient.HttpClient;
 import org.expath.httpclient.HttpClientException;
+import org.expath.httpclient.HttpConstants;
 import org.expath.tools.ToolsException;
 import org.expath.tools.model.Element;
 import org.expath.tools.saxon.model.SaxonElement;
@@ -52,13 +53,16 @@ public class SendRequestCall
         }
         SequenceIterator iter = bodies == null ? null : bodies.iterate();
         SaxonSequence seq = new SaxonSequence(iter, ctxt);
-        SaxonResult result = new SaxonResult(ctxt, href);
+        SaxonResult result = new SaxonResult(ctxt, HttpConstants.HTTP_CLIENT_NS_URI);
         try {
             Element elem = new SaxonElement(request, ctxt);
             result = (SaxonResult) HttpClient.sendRequest(result, elem, href, seq);
             return result.newSequence();
         }
-        catch ( ToolsException | HttpClientException ex ) {
+        catch ( ToolsException ex ) {
+            throw new XPathException("Error sending the HTTP request", ex);
+        }
+        catch ( HttpClientException ex ) {
             throw new XPathException("Error sending the HTTP request", ex);
         }
     }
