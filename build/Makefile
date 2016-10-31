@@ -23,7 +23,7 @@ clean: clean-java clean-saxon
 dist:  dist-java  dist-saxon
 
 dist-java:
-	echo "org.expath.httpclient.version=$(JAVA.ver)"   >  $(prop-java)
+	echo "org.expath.httpclient.version=$(JAVA.ver)"  >  $(prop-java)
 	echo "org.expath.httpclient.revision=$(REVISION)" >> $(prop-java)
 	( cd "$(JAVA.prj)" && ant )
 	mkdir "$(JAVA.root)"
