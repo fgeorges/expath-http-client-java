@@ -28,13 +28,6 @@ import org.expath.tools.ToolsException;
 public class BinaryResponseBody
         implements HttpResponseBody
 {
-    public BinaryResponseBody(Result result, byte[] value, ContentType type, HeaderSet headers)
-            throws HttpClientException
-    {
-        myContentType = type;
-        myHeaders = headers;
-        result.add(value);
-    }
 
     // TODO: Work only for binary response.  What if the response is encoded
     //   with base64?
@@ -48,19 +41,7 @@ public class BinaryResponseBody
     {
         myContentType = type;
         myHeaders = headers;
-        try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[4096];
-            int read = 0;
-            while ( (read = in.read(buf)) > 0 ) {
-                out.write(buf, 0, read);
-            }
-            byte[] bytes = out.toByteArray();
-            result.add(bytes);
-        }
-        catch ( IOException ex ) {
-            throw new HttpClientException("error reading HTTP response", ex);
-        }
+        result.add(in);
     }
 
     @Override
