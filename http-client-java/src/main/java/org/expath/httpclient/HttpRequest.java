@@ -1,5 +1,5 @@
 /****************************************************************************/
-/*  File:       HttpConnection.java                                         */
+/*  File:       HttpRequest.java                                            */
 /*  Author:     F. Georges - fgeorges.org                                   */
 /*  Date:       2009-02-02                                                  */
 /*  Tags:                                                                   */
@@ -9,40 +9,37 @@
 
 package org.expath.httpclient;
 
-import java.io.InputStream;
+import org.expath.httpclient.model.Result;
 
 /**
- * Abstract the services needed on the actual HTTP connection.
- *
- * I should be able to use either HttpURLConnection or Apache HTTP Client to
- * implement it.
+ * An HTTP request.
  *
  * @author Florent Georges
  */
-public interface HttpConnection
+public interface HttpRequest
 {
-    public void connect(HttpRequestBody body, HttpCredentials cred)
+    public HttpResponse send(Result result, HttpConnection conn, HttpCredentials cred)
             throws HttpClientException;
-    public void disconnect()
-            throws HttpClientException;
+    public String getMethod();
+    public void setMethod(String method);
+    public String getHref();
+    public void setHref(String href);
+    public String getHttpVersion();
     public void setHttpVersion(String ver)
             throws HttpClientException;
-    // requests...
-    public void setRequestHeaders(HeaderSet headers)
+    public void setDefaultCharset(String charset);
+    public void setOverrideType(String type);
+    public void setHeaders(HeaderSet headers);
+    public void setBody(HttpRequestBody body)
             throws HttpClientException;
-    public void setRequestMethod(String method, boolean with_content)
-            throws HttpClientException;
+    public void setStatusOnly(boolean only);
     public void setFollowRedirect(boolean follow);
-    public void setTimeout(int seconds);
-    // responses...
-    public int getResponseStatus()
-            throws HttpClientException;
-    public String getResponseMessage()
-            throws HttpClientException;
-    public HeaderSet getResponseHeaders()
-            throws HttpClientException;
-    public InputStream getResponseStream()
-            throws HttpClientException;
+    public void setTimeout(Integer seconds);
+    public void setGzip(boolean gzip);
+    public boolean isChunked();
+    public void setChunked(boolean chunked);
+    boolean isPreemptiveAuthentication();
+    void setPreemptiveAuthentication(final boolean preemptiveAuthentication);
 }
 
 

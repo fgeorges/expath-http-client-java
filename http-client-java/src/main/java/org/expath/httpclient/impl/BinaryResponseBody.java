@@ -1,7 +1,7 @@
 /****************************************************************************/
-/*  File:       HrefRequestBody.java                                        */
+/*  File:       BinaryResponseBody.java                                     */
 /*  Author:     F. Georges - fgeorges.org                                   */
-/*  Date:       2009-02-25                                                  */
+/*  Date:       2009-02-03                                                  */
 /*  Tags:                                                                   */
 /*      Copyright (c) 2009 Florent Georges (see end of file.)               */
 /* ------------------------------------------------------------------------ */
@@ -9,79 +9,62 @@
 
 package org.expath.httpclient.impl;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
+import org.expath.httpclient.ContentType;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
-import org.expath.httpclient.HttpRequestBody;
-import org.expath.tools.model.Element;
+import org.expath.httpclient.HttpResponseBody;
+import org.expath.httpclient.model.Result;
+import org.expath.httpclient.model.TreeBuilder;
+import org.expath.tools.ToolsException;
 
 /**
- * A body in the request, defined by reference.
+ * A binary body in the response.
  *
  * @author Florent Georges
  */
-public class HrefRequestBody
-        extends HttpRequestBody
+public class BinaryResponseBody
+        implements HttpResponseBody
 {
-    /**
-     * TODO: Check there is no other attributes (only @src and @media-type)...
-     */
-    public HrefRequestBody(Element elem)
+
+    // TODO: Work only for binary response.  What if the response is encoded
+    //   with base64?
+    // -> see my recent email on this subject on xproc-comments ("p:http-request
+    //    content-type and encoding" on 2009-02-10,) I think base64 should either
+    //    not be supported at all, or be implemented as a wrapper InputStream
+    //    that is set earlier on the InputStream to decode base64 (for binary,
+    //    text or whatever.)
+    public BinaryResponseBody(Result result, InputStream in, ContentType type, HeaderSet headers)
             throws HttpClientException
     {
-        super(elem);
-        myHref = elem.getAttribute("src");
+        myContentType = type;
+        myHeaders = headers;
+        result.add(in);
     }
 
     @Override
-    public boolean isMultipart()
-    {
-        return false;
-    }
-
-    @Override
-    public void setHeaders(HeaderSet headers)
+    public void outputBody(TreeBuilder b)
             throws HttpClientException
     {
-        // set the Content-Type header (if not set by the user)
-        if ( headers.getFirstHeader("Content-Type") == null ) {
-            headers.add("Content-Type", getContentType());
+        if ( myHeaders != null ) {
+            b.outputHeaders(myHeaders);
         }
-    }
-
-    @Override
-    public void serialize(OutputStream out)
-            throws HttpClientException
-    {
         try {
-            String filename = new URI(myHref).getPath();
-            InputStream in = new FileInputStream(new File(filename));
-            byte[] buf = new byte[4096];
-            int l = -1;
-            while ( (l = in.read(buf)) != -1 ) {
-                out.write(buf, 0, l);
-            }
-            in.close();
+            b.startElem("body");
+            b.attribute("media-type", myContentType.getValue());
+            // TODO: Support other attributes as well?
+            b.startContent();
+            b.endElem();
         }
-        catch ( URISyntaxException ex ) {
-            throw new HttpClientException("Bad URI: " + myHref, ex);
-        }
-        catch ( FileNotFoundException ex ) {
-            throw new HttpClientException("Error sending the file content", ex);
-        }
-        catch ( IOException ex ) {
-            throw new HttpClientException("Error sending the file content", ex);
+        catch ( ToolsException ex ) {
+            throw new HttpClientException("Error building the body", ex);
         }
     }
 
-    private String myHref;
+    private ContentType myContentType;
+    private HeaderSet myHeaders;
 }
 
 

@@ -9,42 +9,47 @@
 
 package org.expath.httpclient.impl;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.ProxySelector;
+import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
+
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpVersion;
+import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.AuthCache;
 import org.apache.http.client.CookieStore;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpOptions;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpTrace;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.params.ClientPNames;
-import org.apache.http.conn.routing.HttpRoutePlanner;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.GzipCompressingEntity;
+import org.apache.http.client.methods.*;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentProducer;
 import org.apache.http.entity.EntityTemplate;
-import org.apache.http.impl.client.AbstractHttpClient;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.ProxySelectorRoutePlanner;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.auth.DigestScheme;
+import org.apache.http.impl.client.*;
+import org.apache.http.impl.conn.*;
+import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.ssl.SSLContexts;
 import org.expath.httpclient.HeaderSet;
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpConnection;
@@ -52,11 +57,15 @@ import org.expath.httpclient.HttpConstants;
 import org.expath.httpclient.HttpCredentials;
 import org.expath.httpclient.HttpRequestBody;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+
 /**
  * An implementation of an HTTP connection using Apachhe HTTP Client.
  *
  * @author Florent Georges
  */
+@NotThreadSafe
 public class ApacheHttpConnection
         implements HttpConnection
 {
@@ -66,20 +75,31 @@ public class ApacheHttpConnection
         myRequest = null;
         myResponse = null;
         myVersion = DEFAULT_HTTP_VERSION;
-        myClient = null;
     }
 
-    public void connect(HttpRequestBody body, HttpCredentials cred)
+    @Override
+    public void connect(final HttpRequestBody body, final HttpCredentials cred)
             throws HttpClientException
     {
         if ( myRequest == null ) {
             throw new HttpClientException("setRequestMethod has not been called before");
         }
+
+        myRequest.setProtocolVersion(myVersion);
+
         try {
             // make a new client
-            myClient = makeClient();
+            if(myClient == null) {
+                myClient = makeClient();
+            }
+
+            if(myResponse != null) {
+                // close any previous response
+                myResponse.close();
+            }
+
             // set the credentials (if any)
-            setCredentials(cred);
+            final HttpClientContext clientContext = setCredentials(cred);
             // set the request entity body (if any)
             setRequestEntity(body);
             // log the request headers?
@@ -90,7 +110,7 @@ public class ApacheHttpConnection
                 LoggerHelper.logCookies(LOG, "COOKIES", COOKIES.getCookies());
             }
             // send the request
-            myResponse = myClient.execute(myRequest);
+            myResponse = myClient.execute(myRequest, clientContext);
 
             // TODO: Handle 'Connection' headers (for instance "Connection: close")
             // See for instance http://www.jmarshall.com/easy/http/.
@@ -104,21 +124,56 @@ public class ApacheHttpConnection
             }
         }
         catch ( IOException ex ) {
-            throw new HttpClientException("Error executing the HTTP method: " + ex.getMessage(), ex);
+            final String message = getMessage(ex);
+            throw new HttpClientException("Error executing the HTTP method: " + message != null ? message : "<unknown>", ex);
+        } finally {
+            state = State.POST_CONNECT;
         }
     }
 
-    public void disconnect()
-    {
-        if ( myClient != null ) {
-            myClient.getConnectionManager().shutdown();
+    /**
+     * Retrieves a message from the Throwable
+     * or its cause (recursively).
+     *
+     * @param throwable A thrown exception
+     *
+     * @return The first message, or null if there are no messages
+     *     at all.
+     */
+    private String getMessage(final Throwable throwable) {
+        if(throwable.getMessage() != null) {
+            return throwable.getMessage();
+        }
+
+        final Throwable cause = throwable.getCause();
+        if(cause == null || cause == throwable) {
+            return null;
+        }
+
+        return getMessage(cause);
+    }
+
+    @Override
+    public void disconnect() throws HttpClientException {
+        try {
+            if(myResponse != null) {
+                myResponse.close();
+                myResponse = null;
+            }
+
+            myClient.close();
+            myClient = null;
+        } catch (final IOException ex) {
+            final String message = getMessage(ex);
+            throw new HttpClientException(message, ex);
         }
     }
 
-    public void setHttpVersion(String ver)
+    @Override
+    public void setHttpVersion(final String ver)
             throws HttpClientException
     {
-        if ( myClient != null ) {
+        if ( state != State.INITIAL ) {
             String msg = "Internal error, HTTP version cannot been "
                     + "set after connect() has been called.";
             throw new HttpClientException(msg);
@@ -191,6 +246,21 @@ public class ApacheHttpConnection
     public void setTimeout(int seconds)
     {
         myTimeout = seconds;
+    }
+
+    @Override
+    public void setGzip(final boolean gzip) {
+        myGzip = gzip;
+    }
+
+    @Override
+    public void setChunked(final boolean chunked) {
+        myChunked = chunked;
+    }
+
+    @Override
+    public void setPreemptiveAuthentication(final boolean preemptiveAuthentication) {
+        myPreemptiveAuthentication = preemptiveAuthentication;
     }
 
     /**
@@ -283,64 +353,106 @@ public class ApacheHttpConnection
     /**
      * Make a new Apache HTTP client, in order to serve this request.
      */
-    private AbstractHttpClient makeClient()
-    {
-        AbstractHttpClient client = new DefaultHttpClient();
-        HttpParams params = client.getParams();
+    private CloseableHttpClient makeClient() {
+
+        final HttpClientBuilder clientBuilder = HttpClientBuilder.create()
+            .setConnectionManager(POOLING_CONNECTION_MANAGER)
+            .setConnectionManagerShared(true);
+
         // use the default JVM proxy settings (http.proxyHost, etc.)
-        HttpRoutePlanner route = new ProxySelectorRoutePlanner(
-                client.getConnectionManager().getSchemeRegistry(),
-                ProxySelector.getDefault());
-        client.setRoutePlanner(route);
+        clientBuilder.setRoutePlanner(new SystemDefaultRoutePlanner(null));
+
         // do follow redirections?
-        params.setBooleanParameter(ClientPNames.HANDLE_REDIRECTS, myFollowRedirect);
-        // set the timeout if any
-        if ( myTimeout != null ) {
-            // See http://blog.jayway.com/2009/03/17/configuring-timeout-with-apache-httpclient-40/
-            HttpConnectionParams.setConnectionTimeout(params, myTimeout * 1000);
-            HttpConnectionParams.setSoTimeout(params, myTimeout * 1000);
+        if(myFollowRedirect) {
+            clientBuilder.setRedirectStrategy(LaxRedirectStrategy.INSTANCE);
         }
+
         // the shared cookie store
-        client.setCookieStore(COOKIES);
-        // the HTTP version (1.0 or 1.1)
-        params.setParameter("http.protocol.version", myVersion);
-        // return the just built client
+        clientBuilder.setDefaultCookieStore(COOKIES);
+
+        // set the timeout if any
+        final RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
+        if(myTimeout != null) {
+            // See http://blog.jayway.com/2009/03/17/configuring-timeout-with-apache-httpclient-40/
+            requestConfigBuilder
+                    .setConnectTimeout(myTimeout * 1000)
+                    .setSocketTimeout(myTimeout * 1000);
+        }
+        clientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
+
+        final CloseableHttpClient client = clientBuilder.build();
         return client;
     }
 
     /**
      * Set the credentials on the client, based on the {@link HttpCredentials} object.
      */
-    private void setCredentials(HttpCredentials cred)
-            throws HttpClientException
-    {
-        if ( cred == null ) {
-            return;
+    private HttpClientContext setCredentials(HttpCredentials cred)
+            throws HttpClientException {
+        final HttpClientContext clientContext = HttpClientContext.create();
+
+        if (cred == null) {
+            return clientContext;
         }
-        URI uri = myRequest.getURI();
+
+        final URI uri = myRequest.getURI();
+        final String scheme = uri.getScheme();
         int port = uri.getPort();
-        if ( port == -1 ) {
-            String scheme = uri.getScheme();
-            if ( "http".equals(scheme) ) {
+        if (port == -1) {
+            if ("http".equals(scheme)) {
                 port = 80;
-            }
-            else if ( "https".equals(scheme) ) {
+            } else if ("https".equals(scheme)) {
                 port = 443;
-            }
-            else {
+            } else {
                 throw new HttpClientException("Unknown scheme: " + uri);
             }
         }
-        String host = uri.getHost();
-        String user = cred.getUser();
-        String pwd = cred.getPwd();
-        if ( LOG.isDebugEnabled() ) {
-            LOG.debug("Set credentials for " + host + ":" + port
+        final String host = uri.getHost();
+
+        final HttpHost targetHost = new HttpHost(host, port, scheme);
+
+        final String user = cred.getUser();
+        final String pwd = cred.getPwd();
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Set credentials for " + targetHost.getHostName() + ":" + targetHost.getPort()
                     + " - " + user + " - ***");
         }
-        Credentials c = new UsernamePasswordCredentials(user, pwd);
-        AuthScope scope = new AuthScope(host, port);
-        myClient.getCredentialsProvider().setCredentials(scope, c);
+
+        final Credentials c = new UsernamePasswordCredentials(user, pwd);
+        final AuthScope scope = new AuthScope(targetHost);
+
+        if (clientContext.getCredentialsProvider() == null) {
+            clientContext.setCredentialsProvider(new BasicCredentialsProvider());
+        } else {
+            clientContext.getCredentialsProvider().clear();
+        }
+
+        clientContext.getCredentialsProvider().setCredentials(scope, c);
+
+        // force preemptive authentication?
+        // see - https://hc.apache.org/httpcomponents-client-ga/tutorial/html/authentication.html#d5e717
+        if (myPreemptiveAuthentication) {
+
+            // is there already an auth cache?
+            if (clientContext.getAuthCache() == null) {
+                // no, so create one
+                final AuthCache authCache = new BasicAuthCache();
+                clientContext.setAuthCache(authCache);
+            }
+
+            // set the auth cache scheme
+            final AuthScheme authScheme;
+            if (cred.getMethod().equals("DIGEST")) {
+                authScheme = new DigestScheme();
+            } else {
+                authScheme = new BasicScheme();
+            }
+
+            clientContext.getAuthCache().put(targetHost, authScheme);
+        }
+
+        return clientContext;
     }
 
     /**
@@ -353,23 +465,58 @@ public class ApacheHttpConnection
             return;
         }
         // make the entity from a new producer
-        HttpEntity entity;
+        final HttpEntity entity;
         if ( myVersion == HttpVersion.HTTP_1_1 ) {
-            // Take advantage of HTTP 1.1 chunked encoding to stream the
-            // payload directly to the request.
-            ContentProducer producer = new RequestBodyProducer(body);
-            EntityTemplate template = new EntityTemplate(producer);
-            template.setContentType(body.getContentType());
-            entity = template;
+
+            final HttpEntity template;
+            if(myChunked) {
+                // Take advantage of HTTP 1.1 chunked encoding to stream the
+                // payload directly to the request.
+                final ContentProducer producer = new RequestBodyProducer(body);
+                final EntityTemplate entityTemplate = new EntityTemplate(producer);
+                entityTemplate.setContentType(body.getContentType());
+                entityTemplate.setChunked(true);
+                template = entityTemplate;
+
+            } else {
+                /*
+                    NOTE: for some reason even if you set EntityTemplate#setChunked(false),
+                    Apache insists on chunking anyway... So, instead we manually buffer here
+                    to foce non-chunked transfer encoding.
+                 */
+                try (final ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+                    body.serialize(buffer);
+                    template = new ByteArrayEntity(buffer.toByteArray());
+                } catch (final IOException e) {
+                    throw new HttpClientException(e.getMessage(), e);
+                }
+            }
+
+            if(myGzip) {
+                entity = new GzipCompressingEntity(template);
+            } else {
+                entity = template;
+            }
         }
         else {
             // With HTTP 1.0, chunked encoding is not supported, so first
             // serialize into memory and use the resulting byte array as the
             // entity payload.
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            body.serialize(buffer);
-            entity = new ByteArrayEntity(buffer.toByteArray());
+            try (final ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+                if(myGzip) {
+                    try (final GZIPOutputStream gzip = new GZIPOutputStream(buffer)) {
+                        body.serialize(gzip);
+                    }
+                    myRequest.setHeader(HTTP.CONTENT_ENCODING, "gzip");
+                } else {
+                    body.serialize(buffer);
+                }
+                entity = new ByteArrayEntity(buffer.toByteArray());
+            } catch (final IOException e) {
+                throw new HttpClientException(e.getMessage(), e);
+            }
         }
+
         // cast the request
         HttpEntityEnclosingRequestBase req = null;
         if ( ! (myRequest instanceof HttpEntityEnclosingRequestBase) ) {
@@ -383,20 +530,80 @@ public class ApacheHttpConnection
         req.setEntity(entity);
     }
 
+    private static PoolingHttpClientConnectionManager setupConnectionPool() {
+        final SSLContext sslContext = SSLContexts.
+                createSystemDefault();
+
+        final SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLSocketFactoryWithSNI(sslContext);
+
+        final Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("https", sslConnectionSocketFactory)
+                .register("http", PlainConnectionSocketFactory.INSTANCE)
+                .build();
+
+        final PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry, null, null, null, 15, TimeUnit.MINUTES);     //TODO(AR) TTL is currently 15 minutes, make configurable?
+        poolingHttpClientConnectionManager.setMaxTotal(40); //TODO(AR) total pooled connections is 40, make configurable?
+        poolingHttpClientConnectionManager.setDefaultMaxPerRoute(2);    //TODO(AR) max default connections per route is 2, make configurable?
+        return poolingHttpClientConnectionManager;
+    }
+
+    /**
+     * Implements SNI (Server Name Identification) for SSL
+     *
+     * @see https://github.com/fgeorges/expath-http-client-java/issues/5
+     */
+    private static class SSLSocketFactoryWithSNI extends SSLConnectionSocketFactory {
+        public SSLSocketFactoryWithSNI(final SSLContext sslContext) {
+            super(sslContext);
+        }
+
+        @Override
+        public Socket connectSocket(final int connectTimeout, final Socket socket, final HttpHost host,
+                final InetSocketAddress remoteAddress, final InetSocketAddress localAddress, final HttpContext context)
+                throws IOException {
+            if (socket instanceof SSLSocket) {
+                try {
+                    final Class socketClazz = socket.getClass();
+                    final Method m = socketClazz.getDeclaredMethod("setHost", String.class);
+                    m.setAccessible(true);
+                    m.invoke(socket, host.getHostName());
+                } catch (final NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                    LOG.warn("Problem whilst setting SNI: " + e.getMessage(), e);
+                }
+            }
+
+            return super.connectSocket(connectTimeout, socket, host, remoteAddress, localAddress, context);
+        }
+    }
+
+    private enum State {
+        INITIAL,
+        POST_CONNECT
+    }
+
+    private static final PoolingHttpClientConnectionManager POOLING_CONNECTION_MANAGER = setupConnectionPool();
+
+    private State state = State.INITIAL;
+
     /** The target URI. */
     private URI myUri;
+    /** The Apache client. */
+    private CloseableHttpClient myClient;
     /** The Apache request. */
-    private HttpUriRequest myRequest;
+    private HttpRequestBase myRequest;
     /** The Apache response. */
-    private HttpResponse myResponse;
+    private CloseableHttpResponse myResponse;
     /** The HTTP protocol version. */
     private HttpVersion myVersion;
-    /** The Apache client. */
-    private AbstractHttpClient myClient;
     /** Follow HTTP redirect? */
     private boolean myFollowRedirect = true;
     /** The timeout to use, in seconds, or null for default. */
     private Integer myTimeout = null;
+    /** whether we should use gzip transfer encoding */
+    private boolean myGzip = false;
+    private boolean myChunked = true;
+    private boolean myPreemptiveAuthentication = false;
+
     /**
      * The shared cookie store.
      *

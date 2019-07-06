@@ -9,7 +9,11 @@
 
 package org.expath.httpclient.model;
 
+import java.io.Reader;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import javax.xml.transform.Source;
+
 import org.expath.httpclient.HttpClientException;
 import org.expath.httpclient.HttpResponse;
 
@@ -63,22 +67,22 @@ public interface Result
             throws HttpClientException;
 
     /**
-     * Add an {@code xs:string} to the result sequence.
+     * Add a string value to the result sequence.
      * 
      * @param string The string to add to the result sequence.
      * @throws HttpClientException If any error occurs.
      */
-    public void add(String string)
+    public void add(Reader string, Charset encoding)
             throws HttpClientException;
 
     /**
-     * Add an {@code xs:base64Binary} to the result sequence.
+     * Add raw binary to the result sequence.
      * 
-     * @param bytes The bytes representing the base64 binary item to add to the
+     * @param bytes The bytes representing the binary item to add to the
      *      result sequence.
      * @throws HttpClientException If any error occurs.
      */
-    public void add(byte[] bytes)
+    public void add(InputStream bytes)
             throws HttpClientException;
 
     /**
@@ -124,5 +128,5 @@ public interface Result
 /*                                                                          */
 /*  The Initial Developer of the Original Code is Florent Georges.          */
 /*                                                                          */
-/*  Contributor(s): none.                                                   */
+/*  Contributor(s): Adam Retter                                             */
 /* ------------------------------------------------------------------------ */

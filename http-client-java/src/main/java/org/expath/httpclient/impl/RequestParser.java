@@ -62,11 +62,6 @@ public class RequestParser
         return myCredentials;
     }
 
-    public boolean  getSendAuth()
-    {
-        return mySendAuth;
-    }
-
     public HttpRequest parse(Sequence bodies, String href)
             throws HttpClientException
     {
@@ -89,9 +84,11 @@ public class RequestParser
         //     override-media-type? = string
         //     follow-redirect? = boolean
         //     timeout? = integer
+        //     gzip? = boolean
+        //     chunked? = boolean
         for ( Attribute a : myRequest.attributes() ) {
             String local = a.getLocalName();
-            if ( !"".equals(a.getNamespaceUri()) ) {
+            if ( !(a.getNamespaceUri() == null || a.getNamespaceUri().isEmpty()) ) {
                 // ignore namespace qualified attributes
             }
             else if ( "method".equals(local) ) {
@@ -116,7 +113,10 @@ public class RequestParser
                 auth_method = a.getValue();
             }
             else if ( "send-authorization".equals(local) ) {
-                mySendAuth = toBoolean(a);
+                req.setPreemptiveAuthentication(toBoolean(a));
+            }
+            else if ( "default-charset".equals(local) ) {
+                req.setDefaultCharset(a.getValue());
             }
             else if ( "override-media-type".equals(local) ) {
                 req.setOverrideType(a.getValue());
@@ -126,6 +126,12 @@ public class RequestParser
             }
             else if ( "timeout".equals(local) ) {
                 req.setTimeout(toInteger(a));
+            }
+            else if ( "gzip".equals(local) ) {
+                req.setGzip(toBoolean(a));
+            }
+            else if ( "chunked".equals(local) ) {
+                req.setChunked(toBoolean(a));
             }
             else {
                 throw new HttpClientException("Unknown attribute http:request/@" + local);
@@ -140,6 +146,9 @@ public class RequestParser
         if ( username != null || password != null || auth_method != null ) {
             setAuthentication(username, password, auth_method);
         }
+        if(req.getHttpVersion() != null && req.getHttpVersion().equals(HttpConstants.HTTP_1_0) && req.isChunked()) {
+            throw new HttpClientException("Chunked transfer encoding can only be used with HTTP 1.1");
+        }
 
         // walk the elements
         // TODO: Check element structure validity (header*, (multipart|body)?)
@@ -148,7 +157,7 @@ public class RequestParser
         for ( Element child : myRequest.children() ) {
             String local = child.getLocalName();
             String ns = child.getNamespaceUri();
-            if ( "".equals(ns) ) {
+            if ( ns == null || ns.isEmpty() ) {
                 // elements in no namespace are an error
                 throw new HttpClientException("Element in no namespace: " + local);
             }
@@ -200,7 +209,7 @@ public class RequestParser
         String value = null;
         for ( Attribute a : e.attributes() ) {
             String local = a.getLocalName();
-            if ( !"".equals(a.getNamespaceUri()) ) {
+            if ( !(a.getNamespaceUri() == null || a.getNamespaceUri().isEmpty()) ) {
                 // ignore namespace qualified attributes
             }
             else if ( "name".equals(local) ) {
@@ -217,6 +226,15 @@ public class RequestParser
         if ( name == null || value == null ) {
             throw new HttpClientException("@name and @value are required on http:header");
         }
+
+        if(name.equalsIgnoreCase("Content-Length")) {
+            throw new HttpClientException("Content-Length should not be explicitly provided, either it will automatically be added or Transfer-Encoding will be used.");
+        }
+
+        if(name.equalsIgnoreCase("Transfer-Encoding")) {
+            throw new HttpClientException("Transfer-Encoding should not be explicitly provided, it will automatically be added if required.");
+        }
+
         // actually add the header
         headers.add(name, value);
     }
@@ -265,8 +283,6 @@ public class RequestParser
     private String myOtherNs;
     /** User credentials in case of authentication (from @username, @password and @auth-method). */
     private HttpCredentials myCredentials = null;
-    /** The value of @send-authorization. */
-    private boolean mySendAuth = false;
 }
 
 

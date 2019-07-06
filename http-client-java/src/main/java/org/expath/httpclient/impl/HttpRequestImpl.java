@@ -47,6 +47,12 @@ public class HttpRequestImpl
         if ( myTimeout != null ) {
             conn.setTimeout(myTimeout);
         }
+        if ( myGzip ) {
+            conn.setGzip(true);
+        }
+        conn.setChunked(isChunked());
+        conn.setPreemptiveAuthentication(isPreemptiveAuthentication());
+
         conn.setFollowRedirect(myFollowRedirect);
         conn.connect(myBody, cred);
         int status = conn.getResponseStatus();
@@ -69,21 +75,11 @@ public class HttpRequestImpl
         return resp;
     }
 
-    private ContentType getContentType(HeaderSet headers)
+    private ContentType getContentType(final HeaderSet headers)
             throws HttpClientException
     {
-        if ( myOverrideType == null ) {
-            Header h = headers.getFirstHeader("Content-Type");
-            if ( h == null ) {
-                return null;
-            }
-            else {
-                return new ContentType(h);
-            }
-        }
-        else {
-            return new ContentType(myOverrideType, null);
-        }
+        final Header header = headers.getFirstHeader("Content-Type");
+        return ContentType.parse(header, myOverrideType, myDefaultCharset);
     }
 
     @Override
@@ -132,6 +128,11 @@ public class HttpRequestImpl
     }
 
     @Override
+    public void setDefaultCharset(final String charset) {
+        myDefaultCharset = charset;
+    }
+
+    @Override
     public void setOverrideType(String type)
     {
         myOverrideType = type;
@@ -169,13 +170,50 @@ public class HttpRequestImpl
         myTimeout = seconds;
     }
 
+    @Override
+    public void setGzip(final boolean gzip) {
+        myGzip = gzip;
+    }
+
+    @Override
+    public boolean isChunked() {
+        if(myChunked == null) {
+            if(myHttpVer != null && myHttpVer.equals(HttpConstants.HTTP_1_0)) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return myChunked;
+        }
+    }
+
+    @Override
+    public void setChunked(boolean chunked) {
+        this.myChunked = chunked;
+    }
+
+    @Override
+    public boolean isPreemptiveAuthentication() {
+        return myPreemptiveAuthentication;
+    }
+
+    @Override
+    public void setPreemptiveAuthentication(final boolean preemptiveAuthentication) {
+        this.myPreemptiveAuthentication = preemptiveAuthentication;
+    }
+
     private String myMethod;
     private String myHref;
     private String myHttpVer;
+    private String myDefaultCharset;
     private String myOverrideType;
     private boolean myStatusOnly;
     private boolean myFollowRedirect = true;
     private Integer myTimeout = null;
+    private boolean myGzip = false;
+    private Boolean myChunked = null;
+    private boolean myPreemptiveAuthentication = false;
     private HeaderSet myHeaders;
     private HttpRequestBody myBody;
     private static final Log LOG = LogFactory.getLog(HttpRequestImpl.class);
